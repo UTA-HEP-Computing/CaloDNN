@@ -6,7 +6,7 @@ import sys,argparse
 # Generation Model
 Config={
     "GenerationModel":"'Load'",
-    "MaxEvents":1e5,
+    "MaxEvents":int(1e5),
     "FractionTest":0.1,
     "NClasses":2,
     

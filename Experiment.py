@@ -20,7 +20,8 @@ if Mode=="Classification":
     Binning=[NBins,M_min,M_max,Sigma]
 
 InputFile="/home/afarbin/LCD/DLTools/LCD-Electrons-Pi0.h5"
-(Train_X, Train_Y),(Test_X, Test_Y)=LoadData("/home/afarbin/LCD/DLTools/LCD-Electrons-Pi0.h5",.1,2048)
+
+(Train_X, Train_Y, Train_YT),(Test_X, Test_Y, Test_YT)=LoadData(InputFile,FractionTest,MaxEvents,Classification=False)
 
 #(Train_X, Train_Y),(Test_X, Test_Y) = LoadData(InputFile,FractionTest,MaxEvents=MaxEvents)
 
@@ -78,11 +79,11 @@ if Train:
 
 # Analysis
 if Analyze:
-    from DLAnalysis.Regression import *
-    if Mode=="Regression":
-        RegressionAnalysis(MyModel,Test_X,Test_Y,M_min,M_max,BatchSize)
+    # ROC curve... not useful here:
+    #from CaloDNN.Analysis import MultiClassificationAnalysis
+    #result=MultiClassificationAnalysis(MyModel,Test_X,Test_Y,BatchSize )
+    from CaloDNN.Analysis import *
+    ClassificationAnalysis(MyModel,Test_X,Test_Y,Test_YT,M_min,M_max,NBins,BatchSize)
 
-    if Mode=="Classification":
-        ClassificationAnalysis(MyModel,Test_X,Test_Y,Test_YT,M_min,M_max,NBins,BatchSize)
 
 

@@ -6,10 +6,10 @@ import sys,argparse
 # Generation Model
 Config={
     "GenerationModel":"'Load'",
-    "MaxEvents":1e4,
+    "MaxEvents":int(1e5),
     "FractionTest":0.1,
 
-    "M_min":-150,
+    "M_min":0,
     "M_max":200,
 
     "Sigma":0.,
@@ -26,7 +26,7 @@ Config={
     "WeightInitialization":"'normal'",
 
     "Mode":"'Classification'",
-    "NBins":1000,
+    "NBins":200,
 
     "loss":"'categorical_crossentropy'",
     "optimizer":"'rmsprop'"

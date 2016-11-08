@@ -1,7 +1,7 @@
 # Configuration of this job
 parser = argparse.ArgumentParser()
 # Start by creating a new config file and changing the line below
-parser.add_argument('-C', '--config',default="MEDNN/ScanConfig.py")
+parser.add_argument('-C', '--config',default="CaloDNN/ClassificationScanConfig.py")
 
 parser.add_argument('-L', '--LoadModel',default=False)
 parser.add_argument('--gpu', dest='gpuid', default="")

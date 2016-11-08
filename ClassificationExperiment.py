@@ -20,8 +20,7 @@ if Mode=="Classification":
     Binning=[NBins,M_min,M_max,Sigma]
 
 InputFile="/home/afarbin/LCD/DLTools/LCD-Electrons-Pi0.h5"
-
-(Train_X, Train_Y, Train_YT),(Test_X, Test_Y, Test_YT)=LoadData(InputFile,FractionTest,10000)
+(Train_X, Train_Y, Train_YT),(Test_X, Test_Y, Test_YT)=LoadData(InputFile,FractionTest,MaxEvents)
 
 #(Train_X, Train_Y),(Test_X, Test_Y) = LoadData(InputFile,FractionTest,MaxEvents=MaxEvents)
 
