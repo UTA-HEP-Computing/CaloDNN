@@ -23,11 +23,7 @@ class Fully3DImageClassification(ModelWrapper):
                                "input_shape":self.input_shape,
                                "N_classes":self.N_classes,
                                "init":self.init})
-
     def Build(self):
-
-        print self.MetaData
-        
         model = Sequential()
         model.add(Flatten(batch_input_shape=self.input_shape))
 
@@ -37,7 +33,6 @@ class Fully3DImageClassification(ModelWrapper):
 
         for i in xrange(0,self.depth):
 #            model.add(BatchNormalization())
-            print  "Step 4",i
             model.add(Dense(self.width,init=self.init))
             model.add(Activation('relu'))
             model.add(Dropout(0.5))
