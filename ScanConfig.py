@@ -6,7 +6,7 @@ import sys,argparse
 # Generation Model
 Config={
     "GenerationModel":"'Load'",
-    "MaxEvents":1e5,
+    "MaxEvents":1e4,
     "FractionTest":0.1,
 
     "M_min":-150,
@@ -15,7 +15,7 @@ Config={
     "Sigma":0.,
 
     "Epochs":100,
-    "BatchSize":2048*8,
+    "BatchSize":2048,
     
     "LearningRate":0.005,
     

@@ -1,6 +1,6 @@
 import sys,os,argparse
 
-execfile("CaloNN/Arguments.py")
+execfile("CaloDNN/Arguments.py")
 from keras.callbacks import EarlyStopping
 
 # Process the ConfigFile
@@ -12,7 +12,7 @@ if "Config" in dir():
         exec(a+"="+str(Config[a]))
 
 # Load the Data
-from MEDNN.LoadData import *
+from CaloDNN.LoadData import *
 
 if Mode=="Regression":
     Binning=False
@@ -20,8 +20,9 @@ if Mode=="Classification":
     Binning=[NBins,M_min,M_max,Sigma]
 
 InputFile="/home/afarbin/LCD/DLTools/LCD-Electrons-Pi0.h5"
+(Train_X, Train_Y),(Test_X, Test_Y)=LoadData("/home/afarbin/LCD/DLTools/LCD-Electrons-Pi0.h5",.1,2048)
 
-(Train_X, Train_Y),(Test_X, Test_Y) = LoadData(InputFile,MaxEvents=MaxEvents)
+#(Train_X, Train_Y),(Test_X, Test_Y) = LoadData(InputFile,FractionTest,MaxEvents=MaxEvents)
 
 # Normalize the Data... seems to be critical!
 Norm=np.max(Train_X)
@@ -29,12 +30,12 @@ Train_X=Train_X/Norm
 Test_X=Test_X/Norm
 
 # Build/Load the Model
-from DLModels.Regression import *
 from DLTools.ModelWrapper import ModelWrapper
+from CaloDNN.Classification import *
 
-# Instantiate a LSTM AutoEncoder... 
+TXS= Train_X.shape
 
-NInputs=15
+NInputs=TXS[1]*TXS[2]*TXS[3]
 
 if LoadModel:
     print "Loading Model From:",LoadModel
@@ -45,33 +46,29 @@ if LoadModel:
     MyModel.InDir=os.path.dirname(LoadModel)
     MyModel.Load()
 else:
-    if Mode=="Regression":
-        MyModel=FullyConnectedRegression(Name,NInputs,Width,Depth,WeightInitialization)
-    if Mode=="Classification":
-        MyModel=FullyConnectedClassification(Name,NInputs,Width,Depth,Binning[0],WeightInitialization)
+    print "Building Model...",
+    sys.stdout.flush()
+    MyModel=Fully3DImageClassification(Name,TXS,Width,Depth,BatchSize,200,WeightInitialization)
 
     # Build it
     MyModel.Build()
+    print " Done."
 
 # Print out the Model Summary
 MyModel.Model.summary()
 
 # Compile The Model
 print "Compiling Model."
-MyModel.Compile(loss=loss,optimizer=optimizer) 
+MyModel.Compile(Loss=loss,Optimizer=optimizer) 
 
 # Train
 if Train:
     print "Training."
     callbacks=[EarlyStopping(monitor='val_loss', patience=2, verbose=1, mode='min') ]
     callbacks=[]
-    if Mode=="Regression":
-        MyModel.Train(Train_X, Train_Y, Epochs, BatchSize,Callbacks=callbacks)
-        score = MyModel.Model.evaluate(Test_X, Test_Y, batch_size=BatchSize)
 
-    if Mode=="Classification":
-        MyModel.Train(Train_X, Train_Y, Epochs, BatchSize, Callbacks=callbacks)
-        score = MyModel.Model.evaluate(Test_X, Test_Y, batch_size=BatchSize)
+    MyModel.Train(Train_X, Train_Y, Epochs, BatchSize, Callbacks=callbacks)
+    score = MyModel.Model.evaluate(Test_X, Test_Y, batch_size=BatchSize)
 
     print "Final Score:", score
 
