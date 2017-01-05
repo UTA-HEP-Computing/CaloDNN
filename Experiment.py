@@ -19,7 +19,8 @@ if Mode=="Regression":
 if Mode=="Classification":
     Binning=[NBins,M_min,M_max,Sigma]
 
-InputFile="/home/afarbin/LCD/DLTools/LCD-Electrons-Pi0.h5"
+#InputFile="/home/afarbin/LCD/DLTools/LCD-Electrons-Pi0.h5"
+InputFile="/scratch/data-backup/afarbin/LCD/LCD-Electrons-Pi0.h5"
 
 (Train_X, Train_Y, Train_YT),(Test_X, Test_Y, Test_YT)=LoadData(InputFile,FractionTest,MaxEvents,Classification=False)
 

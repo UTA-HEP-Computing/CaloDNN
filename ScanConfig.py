@@ -55,7 +55,7 @@ print "Picked combination: ",i
 for k in Combos[i]:
     Config[k]=Combos[i][k]
 
-Name="MEDNN"
+Name="CaloDNN"
 
 for MetaData in Params.keys():
     val=str(Config[MetaData]).replace('"',"")
