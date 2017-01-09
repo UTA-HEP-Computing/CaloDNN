@@ -1,10 +1,10 @@
-# MEDNN
+# CaloNN
 
 Get the packages:
 
     git clone https://bitbucket.org/anomalousai/DLKit
     cd DLKit
-    git clone https://github.com/UTA-HEP-Computing/MEDNN
+    git clone https://github.com/UTA-HEP-Computing/CaloNN
 
 
 Work from DLKit Directory:
@@ -13,12 +13,12 @@ Work from DLKit Directory:
 
 Check out the arguments:
 
-    python -m MEDNN.Experiment --help
+    python -m CaloNN.Experiment --help
 
 
 Run an experiment:
 
-    python -m MEDNN.Experiment
+    python -m CaloNN.Experiment
 
 
 Look at the results in `TrainedModels` directory.
