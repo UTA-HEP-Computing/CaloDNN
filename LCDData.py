@@ -4,6 +4,7 @@ import glob,os,sys
 from time import time
 
 
+#______________________________________________________________________________
 def LoadData(FileSearch="/scratch/data-backup/afarbin/LCD/*/*.h5", FractionTest=0.1, MaxEvents=-1, MaxFiles=-1):
     print "Searching in :",FileSearch
     Files = glob.glob(FileSearch)
@@ -30,6 +31,8 @@ def LoadData(FileSearch="/scratch/data-backup/afarbin/LCD/*/*.h5", FractionTest=
 
 #(Train_X, Train_Y), (Test_X, Test_Y), ClassIndex=LoadData(MaxFiles=100)
 
+
+#______________________________________________________________________________
 def LCDDataGenerator(batchsize=2048,FileSearch="/home/afarbin/LCD/Data/*/*.h5",MaxFiles=-1,
                      verbose=True, OneHot=True, ClassIndex=False, Energy=False, ClassIndexMap=False):
     print "Searching in :",FileSearch

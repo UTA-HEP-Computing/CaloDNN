@@ -54,7 +54,6 @@ else:
 from DLTools.ModelWrapper import ModelWrapper
 from CaloDNN.Classification import *
 
-
 if LoadModel:
     print "Loading Model From:",LoadModel
     if LoadModel[-1]=="/":
@@ -84,20 +83,20 @@ MyModel.Compile(Loss=loss,Optimizer=optimizer)
 if Train:
     if useGenerator:
         print "Training."
-        callbacks=[EarlyStopping(monitor='val_loss', patience=2, verbose=1, mode='min') ]
+#        callbacks=[EarlyStopping(monitor='val_loss', patience=2, verbose=1, mode='min') ]
         callbacks=[]
 
         MyModel.Model.fit_generator(Train_gen,
                 nb_epoch=Epochs,
-                nb_worker=1,
-                verbose=2,
+                nb_worker=nb_worker,
+                verbose=3,
                 samples_per_epoch=90000, #HARDCODED
                 callbacks=callbacks,
                 pickle_safe=True)
         score = MyModel.Model.evaluate_generator(Test_gen,
                 val_samples=10000, #HARDCODED
                 max_q_size=10,
-                nb_worker=1,
+                nb_worker=nb_worker,
                 pickle_safe=True)
 
     else:
@@ -124,6 +123,5 @@ if Analyze:
 
     from CaloDNN.Analysis import MultiClassificationAnalysis
     result=MultiClassificationAnalysis(MyModel,Test_X,Test_Y,BatchSize)
-
 
 

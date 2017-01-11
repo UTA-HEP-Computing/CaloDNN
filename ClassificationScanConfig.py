@@ -9,6 +9,8 @@ Config={
     "MaxEvents":int(1e5),
     "FractionTest":0.1,
     "NClasses":2,
+
+    "nb_worker":2,
     
     "M_min":0,
     "M_max":200,
