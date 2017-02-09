@@ -157,7 +157,7 @@ if __name__ == '__main__':
     NSamples = 90000
     NTestSamples = 10000
     BatchSize = 1024
-    Train_gen = LoadDataGen(InputFile, BatchSize=BatchSize, Max=NSamples)
+    Train_gen = LoadDataGen(InputFile, BatchSize=BatchSize, Max=-1)
 #    run(Train_gen.next, nthreads=2)
     run(Train_gen, nthreads=2)
     

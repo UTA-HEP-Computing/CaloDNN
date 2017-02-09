@@ -3,13 +3,18 @@ import h5py
 from keras.utils import np_utils
 import sys
 from time import time
+import copy
 
-def shuffle_in_unison_inplace(a, b, c=False):
-    assert len(a) == len(b)
-    p = np.random.permutation(len(a))
-    if type(c) != bool:
-        return a[p], b[p], c[p]
-    return a[p], b[p]
+def shuffle_in_unison_inplace(Data):
+    N=len(Data[0])
+    p = np.random.permutation(N)
+
+    out = []
+    for d in Data:
+        assert N == len(d)
+        out.append(d[p])
+
+    return out
 
 def OrganizeFiles(Samples, OpenFiles=False):
     Files={}
@@ -55,8 +60,8 @@ def OrganizeFiles(Samples, OpenFiles=False):
     return Files
 
 
-def MultiClassGenerator(Samples,batchsize, verbose=True, 
-                        OneHot=True, ClassIndex=False, Energy=False, ClassIndexMap=False):
+def MultiClassGenerator(Samples, batchsize, verbose=True, 
+                        OneHot=True, ClassIndex=False, ClassIndexMap=False, Wrap=False):
     Classes=OrganizeFiles(Samples)
     N_Classes=len(Classes.keys())
 
@@ -69,82 +74,102 @@ def MultiClassGenerator(Samples,batchsize, verbose=True,
     myClassIndexMap={}
     ClassNames=Classes.keys()
 
-    while True:
-        X=False
-        Y=False
-        first=True
+    Data=[]
+    first=True
+    IndexT=None
 
+    Done = False
+    Stop = False
+    while not Done:
         for C in Classes:
             Classes[C]["NExamples"]=N_ExamplePerClass
 
+        # Randomly choose how many from each class
         for i in xrange(0,int(remainEx)):
-            ii=int(float(N_Classes)*np.random.random())
+            ii=int(float(N_Classes)*np.random.random()) # Should this be Possion?
             #        print "Padding ",ClassNames[ii]
             Classes[ClassNames[ii]]["NExamples"]+=1
         
         count=0
         N_TotalExamples=0
+        
         for C in Classes:
+            count+=1
 
             Cl=Classes[C]
             myClassIndexMap[C]=Cl["ClassIndex"]
 
-            myEnergy=float(C.split("_")[-1])
-            count+=1
-
+            # Pull examples from this class
             N_Examples=0
             while N_Examples<Cl["NExamples"]:
                 if Cl["File_I"] >= len(Cl["Files"]):
-                    print "Warning out of files for ",C
-                    break
+                    print "Warning: out of files for",C
+                    Done=not Wrap
+                    if not Wrap:
+                        print "Stopping Generator."
+                        #Stop=True
+                        break
+                    else:
+                        print "Wrapping. Starting with first file for",C
+                        Cl["File_I"]=0
 
                 if verbose:
 #                    print Cl["File_I"], Cl["Example_I"], N_Examples, len(Cl["Files"])
-                    print count,"/",N_Classes,":",C,":", Cl["Files"][Cl["File_I"]], 
-
+                    print count,"/",N_Classes,":",C,":", Cl["Files"][Cl["File_I"]],
                 start=time()
                 if Cl["Example_I"]==0:
-                    if "f" in dir():
-                        f.close()
-                    f=h5py.File(Cl["Files"][Cl["File_I"]])
-#                    Data=Cl["Data"]=np.array(f[Cl["DataSetName"]])
-#                else:
-#                   Data=Cl["Data"]
-                if verbose:
-                    print "t=",time()-start, "Find File.",
+                    if "File" in Cl:
+                        Cl["File"].close()
+                    if verbose:
+                        print "Opening:",Cl["File_I"],
+                    f=Cl["File"]=h5py.File(Cl["Files"][Cl["File_I"]],"r")
+                else:
+                    f=Cl["File"]
+                    
+                #if verbose:
+                #    print "t=",time()-start, "Find File."
 
-                N=f[Cl["DataSetName"]].shape[0] #Data.shape[0]
+                N=f[Cl["DataSetName"][0]].shape[0] 
                 I=Cl["Example_I"]
                 N_Unused=N-I
                 N_End=min(I+(Cl["NExamples"]-N_Examples), N)
                 N_Using=N_End-I
 
-#                if verbose:
-#                    print N, I, N_Unused, N_End, N_Using
+                #if verbose:
+                #    print N, I, N_Unused, N_End, N_Using
 
                 concat=False
 
                 start=time()
+
                 if first:
                     first=False
-                    finalShape= f[Cl["DataSetName"]].shape 
-                    finalShape=(batchsize,)+finalShape[1:]
-                    X=np.zeros(finalShape)
-                    Y=np.zeros(batchsize)
-                    if Energy:
-                        E=np.zeros(batchsize)
+                    for DataSetName in Cl["DataSetName"]:
+                        # Note for try/excepts below: Try to find the dataset in the file, if not there, it must
+                        # be index or something else constructed here
+                        try: 
+                            finalShape= f[DataSetName].shape 
+                            finalShape=(batchsize,)+finalShape[1:]
+                        except:
+                            finalShape=(batchsize,1)                        
+                        Data.append(np.zeros(finalShape))
+
+                        # Fill class index based on samples definition.
+                    IndexT=np.zeros(batchsize)
 
                 a=np.empty(N_Using); a.fill(Cl["ClassIndex"])
-                if Energy:
-                    b=np.empty(N_Using); b.fill(myEnergy)
 
-                if verbose:
-                    print "Adding",N_Using," to",  N_TotalExamples," Events.",
-                X[N_TotalExamples:N_TotalExamples+N_Using]=f[Cl["DataSetName"]][I:N_End] 
-                Y[N_TotalExamples:N_TotalExamples+N_Using]=a
-                if Energy:
-                    E[N_TotalExamples:N_TotalExamples+N_Using]=b
-                    
+                #if verbose:
+                #    print "Adding",N_Using," to",  N_TotalExamples," Events.",
+
+                for i in xrange(0,len(Cl["DataSetName"])):
+                    try:
+                        Data[i][N_TotalExamples:N_TotalExamples+N_Using]=f[Cl["DataSetName"][i]][I:N_End] 
+                    except:
+                        pass
+                        
+                IndexT[N_TotalExamples:N_TotalExamples+N_Using]=a
+
                 if verbose:
                     print "t=",time()-start, "Concatenate."
 
@@ -156,135 +181,30 @@ def MultiClassGenerator(Samples,batchsize, verbose=True,
                 else:
                     Cl["Example_I"]=N_End
 
-
-
-        if verbose:
-            print "Shuffling."
-        start=time()
-        if Energy:
-            X,Y,E=shuffle_in_unison_inplace(X,Y,E)
-        else:
-            X,Y=shuffle_in_unison_inplace(X,Y)
-        Y1= np_utils.to_categorical(Y)
-        if verbose:
-            print "t=",time()-start, "Shuffle."
-
-        results = (X,)
-        if OneHot:
-            results += (Y1,)
-
-        if ClassIndex:
-            results += (Y,)
-
-        if Energy:
-            results += (E,)
+        if not Stop:
+            out=tuple(Data)
             
-        if ClassIndexMap:
-            results+=(myClassIndexMap,)
+            if ClassIndex:
+                out+=(IndexT,)
 
-        yield results
+            if OneHot:
+                Y1=np_utils.to_categorical(IndexT)
+                out+=(Y1,)
 
+            #if verbose:
+            #    print "Shuffling."
+            start=time()
+            out=shuffle_in_unison_inplace(out) 
 
-
-def LoadMultiClassData(Samples, FractionTest=.1, MaxEvents=-1, MinEvents=-1):
-#    FHandles={}
-    Data={}
-    ClassIndex={}
-
-    NFiles=len(Samples)
-    # Get Data Out of every file
-    index=0
-    for S in Samples:
-        if len(S)==2:
-            ClassName=DataSetName=S[1]
-            File=S[0]
-
-        if len(S)==3:
-            DataSetName=S[1]
-            ClassName=S[2]
-            File=S[0]
-
-        print "Opening",index,"/",NFiles,":" ,S,
-        sys.stdout.flush()
-        try:
-            f=h5py.File(File)
-        except:
-            N=-1
-            print
-            print "Failed Opening:",S
+            #if verbose:
+            #    print "t=",time()-start, "Shuffle."
             
-        if ClassName in Data:
-            print "Found ",np.shape(f[DataSetName])[0], "Events in file. ",
-            Data[ClassName]=np.concatenate((Data[ClassName], np.array(f[DataSetName])))
-                
-        else:
-            Data[ClassName]=np.array(f[DataSetName])
-        N=np.shape(Data[ClassName])[0]
+            if ClassIndexMap:
+                out+=(myClassIndexMap,)
 
-        print N," Events in class."
-#        FHandles[ClassName]=f
-
-        ClassIndex[ClassName]=index
-
-        index+=1
-        f.close()
-
-    # MergeData and Create Labels
-
-    First=True
-
-    Train_X=None
-    Train_Y=None
-
-    Test_X=None
-    Test_Y=None
-
-
-    for S in Data:
-        N=np.shape(Data[S])[0]
-        N_Test=int(round(FractionTest*N))
-        N_Train=N-N_Test
-
-        if MaxEvents!=-1:
-            if MaxEvents>N:
-                print "Warning: Sample",S," has",N," events which is less that ",MaxEvents,"."
-                print "Using ",NTrain,"Events for training."
-                print "Using ",NTest,"Events for training."
-            else:
-                N_Test=int(round(FractionTest*MaxEvents))
-                N_Train=MaxEvents-N_Test
-
-        if MinEvents!=-1:
-            if N_Train<MinEvents:
-                print "Warning: Sample",S," has",N_Train," training events which is less that ",MaxEvents,"."
-
-        if not First:
-            Train_X=np.concatenate((Train_X,Data[S][0:N_Train]))
-            a=np.empty(N_Train); a.fill(ClassIndex[S])
-            Train_Y=np.concatenate((Train_Y,a))
-
-            Test_X=np.concatenate((Test_X,Data[S][-N_Test:]))
-            a=np.empty(N_Test); a.fill(ClassIndex[S])
-            Test_Y=np.concatenate((Test_Y,a))
-        else:
-            Train_X=Data[S][0:N_Train]
-            a=np.empty(N_Train); a.fill(ClassIndex[S])
-            Train_Y=a
-
-            Test_X=Data[S][-N_Test:]
-            a=np.empty(N_Test); a.fill(ClassIndex[S])
-            Test_Y=a
-            First=False        
-
-        # Random Shuffle
-     
-    Train_X,Train_Y=shuffle_in_unison_inplace(Train_X,Train_Y)
-    Test_X,Test_Y=shuffle_in_unison_inplace(Test_X,Test_Y)
-        
-    Train_Y= np_utils.to_categorical(Train_Y)
-    Test_Y= np_utils.to_categorical(Test_Y)
-
-    return (Train_X, Train_Y), (Test_X, Test_Y), ClassIndex
+            yield out
 
 
 
+if __name__ == '__main__':
+    pass
