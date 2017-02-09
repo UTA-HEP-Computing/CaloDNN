@@ -6,11 +6,11 @@ import sys,argparse
 # Generation Model
 Config={
     "GenerationModel":"'Load'",
-    "MaxEvents":int(1e5),
+    "MaxEvents":int(.5e6),
     "FractionTest":0.1,
-    "NClasses":2,
+    "NClasses":4,
 
-    "nb_worker":2,
+    "nb_worker":1,  # Note that you'll deliver the same events if nb_worker>1. Ryan, fix this.
     
     "M_min":0,
     "M_max":200,

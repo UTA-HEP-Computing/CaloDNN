@@ -37,7 +37,7 @@ def ClassificationAnalysis(MyModel,Test_X,Test_Y,BatchSize, SignalClassIndex=5):
 
 mpColors=["blue","green","red","cyan","magenta","yellow","black","white"]
 
-def MultiClassificationAnalysis(MyModel,Test_X,Test_Y,BatchSize):
+def MultiClassificationAnalysis(MyModel,Test_X,Test_Y,BatchSize,IndexMap=False):
     import matplotlib as mpl
     mpl.use('pdf')
     import matplotlib.pyplot as plt
@@ -56,8 +56,13 @@ def MultiClassificationAnalysis(MyModel,Test_X,Test_Y,BatchSize):
     
         lw=2
 
+        if IndexMap:
+            ClassName=IndexMap[ClassIndex]
+        else:
+            ClassName="Class "+str(ClassIndex)
+        
         plt.plot(fpr,tpr,color=mpColors[ClassIndex],
-                 lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+                 lw=lw, label=ClassName+ ' (area = %0.2f)' % roc_auc)
 
         print "ROC ",ClassIndex," AUC: ",roc_auc
 

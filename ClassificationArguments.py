@@ -16,7 +16,7 @@ parser.add_argument('--generator', action="store_true")
 args = parser.parse_args()
 Train = not args.NoTrain
 Analyze = not args.NoAnalysis
-TestMode = not args.Test
+TestMode = args.Test
 UseGPU = not args.cpu
 gpuid = args.gpuid
 if args.hyperparamset:

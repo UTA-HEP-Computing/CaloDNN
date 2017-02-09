@@ -7,54 +7,26 @@ import sys
 import time
 
 #______________________________________________________________________________
-def LoadData(filename, FractionTest=.1, MaxEvents=-1, Classification=True):
-
-    F = h5py.File(filename,"r")
-
-    X_In_Shape = F["images"].shape
-    N = X_In_Shape[0]
-    
-    if MaxEvents>0:
-        X_In = F["images"][:MaxEvents]
-        Y_In = F["OneHot"][:MaxEvents]
-        YT_In = F["Index"][:MaxEvents]
-        N=MaxEvents
-    else:
-        X_In = F["images"]
-        Y_In = F["OneHot"]
-        YT_In = F["Index"]
-
-    N_Test = int(round(FractionTest*N))
-    N_Train = N-N_Test
-        
-    Train_X = X_In[:N_Train]
-    Train_Y = Y_In[:N_Train]
-    Train_TY = YT_In[:N_Train]
-
-    Test_X = X_In[N_Train:]
-    Test_Y = Y_In[N_Train:]
-    Test_TY = YT_In[N_Train:]
-
-    if Classification:
-        Test_Y = np.sum(Test_Y.reshape(N_Test,2,100),axis=2)
-        Train_Y = np.sum(Train_Y.reshape(N_Train,2,100),axis=2)
-        
-    return (Train_X, Train_Y,  Train_TY), (Test_X, Test_Y, Test_TY)
-
-
-#______________________________________________________________________________
 class XRanger:
     def __init__(self,start,stop,step=1):
         self.XR=iter(xrange(start,stop,step))
         self.lock = threading.Lock()
-
+        self.start=start
+        self.stop=stop
+        self.step=step
+        self.i=start
+        
     def __iter__(self):
         return self
 
     def next(self):
         # acquire/release the lock when updating self.i
         with self.lock:
-            return self.XR.next()
+            self.i+=self.step
+            if self.i<self.stop:
+                return self.i
+            
+            #return self.XR.next()
 
 #______________________________________________________________________________
 class threadsafe_iter:
@@ -72,7 +44,6 @@ class threadsafe_iter:
         with self.lock:
             return self.it.next()
 
-
 #______________________________________________________________________________
 def threadsafe_generator(f):
     """A decorator that takes a generator function and makes it thread-safe.
@@ -81,48 +52,71 @@ def threadsafe_generator(f):
         return threadsafe_iter(f(*a, **kw))
     return g
 
+#______________________________________________________________________________
+def ConstantNormalization(Norms):
+    def NormalizationFunction(Ds):
+        out = []
+        for i,D in enumerate(Ds):
+            D/=Norms[i]
+            out.append(D)
+        
+        return out
+    return NormalizationFunction
 
 #______________________________________________________________________________
 @threadsafe_generator
-def LoadDataGen(filename, Classification=True, BatchSize=1024, Skip=0, Max=-1):
+def LoadDataGen(filename,  datasets=["ECAL","HCAL","OneHot"],
+                BatchSize=1024, Skip=0, Max=-1,
+                Normalization=False, Wrap=True, verbose=False):
 
     F = h5py.File(filename,"r")
 
-    X_In_Shape = F["images"].shape
+    X_In_Shape = F[datasets[0]].shape
     N = X_In_Shape[0]
+
     if Max < 0.0 or Max > N:
         Max = N
 
     Gen = XRanger(Skip, Max, BatchSize)
 
     i=0
-    while True: 
-
+    Done=False
+    while not Done: 
         for index in Gen:
             i+=1
 
-            X_In = F["images"][index:index+BatchSize]
-            Y_In = F["OneHot"][index:index+BatchSize]
+            Ins=[]
+            for D in datasets:
+                Ins.append( F[D][index:index+BatchSize])
 
-            if Classification:
-                Y_In = np.sum(Y_In.reshape(BatchSize, 2, 100), axis=2)
+            if Normalization:
+                Ins=Normalization(Ins)
 
-            # hardcoded normalization
-            Norm = 150 # HARDCODED
-            X_In = X_In/Norm
+            if verbose:
+                print threading.currentThread().getName(), i, index
 
-            print threading.currentThread().getName(), i, index
-#            print Y_In
+            yield tuple(Ins)
 
-            yield X_In, Y_In
+        Done = not Wrap
 
+@threadsafe_generator
+def MaskGenerator(G,mask):
+    for g in G:
+        res=g
+        out=[]
+        for i,m in enumerate(mask):
+            if m:
+              out.append(res[i])
+        yield tuple(out)
+        
 
+## Testing Code
 #______________________________________________________________________________
-def run(g, nthreads=10):
+def run(g, nthreads=10, iterations=-1):
     """Starts multiple threads to execute the given function multiple
     times in each thread.
     """
-    threads = [threading.Thread(target=loop, args=(g, 10)) for i in xrange(nthreads)]
+    threads = [threading.Thread(target=loop, args=(g, iterations)) for i in xrange(nthreads)]
 
     # start threads
     for t in threads:
@@ -137,8 +131,13 @@ def run(g, nthreads=10):
 #______________________________________________________________________________
 def loop(g, nmax=-1):
     i_count = 0
-    for x, y in g:
-        time.sleep(2)
+    for D in g:
+        #time.sleep(2)
+        for d in D:
+            print d.shape
+            first=d[0]
+            print first[np.where(first>0)]
+            
         i_count += 1
         if nmax > 0 and i_count >= nmax:
             return
@@ -147,18 +146,14 @@ def loop(g, nmax=-1):
 #______________________________________________________________________________
 if __name__ == '__main__':
 
-#    InputFile="/scratch/data-backup/afarbin/LCD/LCD-Electrons-Pi0.h5"
 
-#    F = h5py.File(InputFile,"r")
-#    (x,y,z),(xx,yy,zz)=LoadData(InputFile,.1,100)
-#    (x,y,z),(xx,yy,zz) = LoadDataGen("/scratch/data-backup/afarbin/LCD/LCD-Electrons-Pi0.h5")
-
-    InputFile="/scratch/data-backup/afarbin/LCD/LCD-Electrons-Pi0.h5"
-    NSamples = 90000
-    NTestSamples = 10000
-    BatchSize = 1024
-    Train_gen = LoadDataGen(InputFile, BatchSize=BatchSize, Max=-1)
-#    run(Train_gen.next, nthreads=2)
+    InputFile="/home/afarbin/LCD/DLKit/LCD-Merged-All.h5"
+    BatchSize=1024
+    
+    Train_gen = MaskGenerator( LoadDataGen(InputFile, BatchSize=BatchSize, Max=-1, verbose=True,
+                                           Normalization=ConstantNormalization([150.,150.,1])),
+                               [1,0,1] )
+    
     run(Train_gen, nthreads=2)
     
 
