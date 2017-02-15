@@ -20,13 +20,27 @@ if Mode=="Classification":
     Binning=[NBins,M_min,M_max,Sigma]
 
 InputFile="/home/afarbin/LCD/DLKit/LCD-Merged-All.h5"
-        
-def MakeGenerator(BatchSize,Max=-1,Skip=0):
-    return LoadDataGen(InputFile, datasets=["ECAL","OneHot"],BatchSize=BatchSize, Max=Max, Skip=Skip, verbose=True,
-                       Normalization=ConstantNormalization([150.,1.]))
+from DLTools.ThreadedGenerator import DLGenerator
 
+#LoadDataGen
+GeneratorClasses=[]
+
+def MakeGenerator(BatchSize,Max=-1,Skip=0):
+    if useGenerator:
+        G=DLGenerator([InputFile], datasets=["ECAL","OneHot"],batchsize=BatchSize,
+                      max=Max, skip=Skip, verbose=False, Wrap=True,
+                      n_threads=n_threads,multiplier=multiplier,
+                      Normalization=ConstantNormalization([150.,1.]))
+        GeneratorClasses.append(G)
+
+        return G.Generator()
+    else:
+        return LoadDataGen(InputFile, datasets=["ECAL","OneHot"],BatchSize=BatchSize, Max=Max,
+                           Skip=Skip, verbose=False,
+                           Normalization=ConstantNormalization([150.,1.]))
+    
 if TestMode:
-    MaxEvents=int(1e5)
+    MaxEvents=int(2e4)
     Epochs=2
     print "Test Mode: Set MaxEvents to",MaxEvents," and Epochs to", Epochs
 
@@ -36,7 +50,7 @@ NSamples=MaxEvents-NTestSamples
 if useGenerator:
     print "Using Generator."
     Train_gen = MakeGenerator(BatchSize=BatchSize, Max=NSamples)
-    Test_gen  = MakeGenerator(BatchSize=BatchSize, Skip=NSamples)
+    Test_gen  = MakeGenerator(BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples)
     Test2_gen = MakeGenerator(BatchSize=NTestSamples, Skip=NSamples)
 else:
     print "Loading All Events in Memory... "
@@ -99,13 +113,13 @@ if Train:
                                     #verbose=3,
                                     samples_per_epoch=NSamples,
                                     callbacks=callbacks,
-                                    pickle_safe=True)
+                                    pickle_safe=False)
 
         score = MyModel.Model.evaluate_generator(Test_gen,
                                                  val_samples=NTestSamples, 
                                                  max_q_size=10,
                                                  nb_worker=nb_worker,
-                                                 pickle_safe=True)
+                                                 pickle_safe=False)
 
     else:
         MyModel.Train(Train_X, Train_Y, Epochs, BatchSize, Callbacks=callbacks)
@@ -126,3 +140,6 @@ if Analyze:
                                        IndexMap={0:'Pi0', 2:'ChPi', 3:'Gamma', 1:'Ele'})
 
 
+for g in GeneratorClasses:
+    g.StopFiller()
+    g.StopWorkers()

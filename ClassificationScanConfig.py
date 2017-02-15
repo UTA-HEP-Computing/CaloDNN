@@ -10,7 +10,7 @@ Config={
     "FractionTest":0.1,
     "NClasses":4,
 
-    "nb_worker":1,  # Note that you'll deliver the same events if nb_worker>1. Ryan, fix this.
+    "nb_worker":1, # This shouldn't change much... 
     
     "M_min":0,
     "M_max":200,
@@ -18,7 +18,9 @@ Config={
     "Sigma":0.,
 
     "Epochs":100,
-    "BatchSize":2048,
+    "BatchSize":1024,
+    "n_threads":20, # number of workers
+    "multiplier":2, # Read N batches worth of data in each worker
     
     "LearningRate":0.005,
     
