@@ -19,7 +19,7 @@ Config={
 
     "Epochs":100,
     "BatchSize":1024,
-    "n_threads":20, # number of workers
+    "n_threads":4, # number of workers
     "multiplier":2, # Read N batches worth of data in each worker
     
     "LearningRate":0.005,
