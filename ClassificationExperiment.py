@@ -20,21 +20,22 @@ if Mode=="Classification":
     Binning=[NBins,M_min,M_max,Sigma]
 
 InputFile="/home/afarbin/LCD/DLKit/LCD-Merged-All.h5"
-from DLTools.ThreadedGenerator import DLGenerator
+from DLTools.ThreadedGenerator import DLh5FileGenerator
 
 #LoadDataGen
 GeneratorClasses=[]
 
 def MakeGenerator(BatchSize,Max=-1,Skip=0):
     if useGenerator:
-        G=DLGenerator([InputFile], datasets=["ECAL","OneHot"],batchsize=BatchSize,
-                      max=Max, skip=Skip, verbose=False, Wrap=True,
-                      n_threads=n_threads,multiplier=multiplier,
-                      Normalization=ConstantNormalization([150.,1.]))
+        G=DLh5FileGenerator(files=[InputFile], datasets=["ECAL","OneHot"],batchsize=BatchSize,
+                            max=Max, skip=Skip, verbose=False, Wrap=True,
+                            n_threads=n_threads,multiplier=multiplier,
+                            postprocessfunction=ConstantNormalization([150.,1.]))
         GeneratorClasses.append(G)
 
         return G.Generator()
     else:
+        # Uses the old generator when loading all data in memory, so we don't have to pipe 30 GB between processes.
         return LoadDataGen(InputFile, datasets=["ECAL","OneHot"],BatchSize=BatchSize, Max=Max,
                            Skip=Skip, verbose=False,
                            Normalization=ConstantNormalization([150.,1.]))

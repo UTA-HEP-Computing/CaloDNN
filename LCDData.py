@@ -1,12 +1,14 @@
 ## Reads in the LCD h5 files from Maurizio. Merge, assign labels, and other data prep necessary for running models.
 
-from MultiClassData import *
+#from MultiClassData import *
+from DLTools.ThreadedGenerator import DLMultiClassGenerator
+
 import glob,os,sys
 import random
 from time import time
 
 def LCDDataGenerator(datasetnames,batchsize=2048,FileSearch="/data/afarbin/LCD/*/*.h5",MaxFiles=-1,
-                     verbose=True, OneHot=True, ClassIndex=False, ClassIndexMap=False):
+                     verbose=True, OneHot=True, ClassIndex=False, ClassIndexMap=False,n_threads=4,multiplier=1,timing=False):
     print "Searching in :",FileSearch
     Files = glob.glob(FileSearch)
 
@@ -26,21 +28,29 @@ def LCDDataGenerator(datasetnames,batchsize=2048,FileSearch="/data/afarbin/LCD/*
             if FileCount>MaxFiles:
                 break
 
+    GC= DLMultiClassGenerator(Samples,batchsize,
+                              verbose=verbose, 
+                              #OneHot=OneHot,
+                              ClassIndex=ClassIndex,
+                              n_threads=n_threads,
+                              multiplier=multiplier,
+                              timing=timing)
 
-    return MultiClassGenerator(Samples,batchsize,
-                               verbose=verbose, 
-                               OneHot=OneHot,
-                               ClassIndex=ClassIndex, 
-                               ClassIndexMap=ClassIndexMap)
-
+            
+    if ClassIndexMap:
+        return [GC,GC.ClassIndexMap]
+    else:
+        return GC
 
 def MergeData(filename, h5keys=["ECAL","HCAL","target"], NEvents=1e8, batchsize=2048,verbose=True, MaxFiles=-1):
     # Create a generator
     
-    g=LCDDataGenerator(h5keys, batchsize,
-                       verbose=verbose, 
-                       OneHot=True, ClassIndex=True, ClassIndexMap=True, MaxFiles=MaxFiles)
+    [GenClass,IndexMap]=LCDDataGenerator(h5keys, batchsize,
+                                         verbose=verbose, 
+                                         OneHot=True, ClassIndex=True, ClassIndexMap=True, MaxFiles=MaxFiles)
 
+    g=GenClass.Generator()
+    
     f=h5py.File(filename,"w")
 
     first=True
@@ -80,7 +90,6 @@ def MergeData(filename, h5keys=["ECAL","HCAL","target"], NEvents=1e8, batchsize=
             print "Batch Creation time =",time()-startT
             sys.stdout.flush()
 
-        IndexMap=D[-1]
         i+=batchsize
 
     f.close()
