@@ -1,4 +1,4 @@
-# CaloNN
+# CaloDNN
 
 Get the packages:
 
@@ -6,20 +6,17 @@ Get the packages:
     cd DLKit
     git clone https://github.com/UTA-HEP-Computing/CaloNN
 
-
 Work from DLKit Directory:
 
     cd DLKit
 
 Check out the arguments:
 
-    python -m CaloNN.Experiment --help
-
+    python -m CaloDNN.ClassificationExperiment --help
 
 Run an experiment:
 
-    python -m CaloNN.Experiment
-
+    python -m CaloDNN.ClassificationExperiment
 
 Look at the results in `TrainedModels` directory.
 
