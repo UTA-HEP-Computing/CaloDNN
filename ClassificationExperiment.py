@@ -108,7 +108,10 @@ else:
 
     if HCAL and ECAL:
         MyModel=MergerModel(Name+"Merger",[ECALModel,HCALModel], NClasses, WeightInitialization)
-        
+
+    # Configure the Optimizer, using optimizer configuration parameter.
+    MyModel.BuildOptimizer(optimizer,Config)
+    MyModel.loss=loss
     # Build it
     MyModel.Build()
     print " Done."
@@ -116,27 +119,10 @@ else:
 # Print out the Model Summary
 MyModel.Model.summary()
 
-# Configure the Optimizer, using optimizer configuration parameter.
-try:
-#if True:
-    from keras.optimizers import *
-    opt_Instance=eval(optimizer+"()")
-    opt_config=opt_Instance.get_config()
-    for param in opt_config:
-        try:
-            opt_config[param]=eval(param)
-        except Exception as detail:
-            print "Warning: optimizer configuration parameter",param,
-            print "was not set in configuration file. Will use default."
-    optimizer=optimizer_from_config({"class_name":optimizer,"config":opt_config})
-except Exception as detail:
-    print "Error:", detail
-    print "Warning: unable to instantiate and configure optimizer",optimizer,
-    print ". Will attempt to use default config."
 
 # Compile The Model
 print "Compiling Model."
-MyModel.Compile(Loss=loss,Optimizer=optimizer) 
+MyModel.Compile() 
 
 # Train
 if Train:
