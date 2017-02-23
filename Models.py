@@ -2,7 +2,7 @@ from DLTools.ModelWrapper import *
 
 from keras.models import Sequential
 from keras.layers.core import Dense, Activation
-from keras.layers import  BatchNormalization,Dropout,Flatten
+from keras.layers import  BatchNormalization,Dropout,Flatten,Merge
 from keras.models import model_from_json
 
 class Fully3DImageClassification(ModelWrapper):
@@ -37,9 +37,32 @@ class Fully3DImageClassification(ModelWrapper):
             model.add(Activation('relu'))
             model.add(Dropout(0.5))
 
-        model.add(Dense(self.N_classes, activation='softmax'))
+        model.add(Dense(self.N_classes, activation='softmax',init=self.init))
 
         self.Model=model
 
+    def Compile(self, Loss="categorical_crossentropy", Optimizer="rmsprop"):
+        self.Model.compile(loss=Loss, optimizer=Optimizer,metrics=["accuracy"])
+        
+class MergerModel(ModelWrapper):
+    def __init__(self, Name, Models, N_Classes, init):
+        super(MergerModel, self).__init__(Name)
+        self.Models=Models
+        self.N_Classes=N_Classes
+        self.init=init
+        
+    def Build(self):
+        model=Sequential()
+
+        MModels=[]
+
+        for m in self.Models:
+            MModels.append(m.Model)
+            
+        model.add(Merge(MModels,mode='concat'))
+        model.add(Dense(self.N_Classes, activation='softmax',init=self.init))
+
+        self.Model=model
+        
     def Compile(self, Loss="categorical_crossentropy", Optimizer="rmsprop"):
         self.Model.compile(loss=Loss, optimizer=Optimizer,metrics=["accuracy"])
