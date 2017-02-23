@@ -14,7 +14,7 @@ Check out the arguments:
 
     python -m CaloDNN.ClassificationExperiment --help
 
-Edit CaloDNN/ClassificationScanConfig.py to set input files and experiment configuration.
+Edit `CaloDNN/ClassificationScanConfig.py` to set input files and experiment configuration.
 
 Run an experiment:
 

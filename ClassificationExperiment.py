@@ -26,7 +26,7 @@ from CaloDNN.LCDData import *
 
 # We apply a constant Normalization to the input and target data.
 # The ConstantNormalization function, which is applied during reading,
-# takes a list with the entries corresponding to Tensors read from
+# takes a list with the entries corresponding to the Tensors read from
 # input file. For LCD Data set the tensors are [ ECAL, HCAL, OneHot ]
 # so the normalization constant is [ ECALNorm, HCALNorm, 1. ]. 
 
@@ -72,6 +72,7 @@ if Preload:
     Train_gen=Train_genC.PreloadGenerator()
 
 # We need data in memory for analysis.
+# If your FractionTest is high, you may run out of memory.
 if Preload or Analyze: 
     Test_gen=Test_genC.PreloadGenerator()
     
@@ -92,7 +93,7 @@ if LoadModel:
 else:
     import keras
     print "Building Model...",
-
+        
     if ECAL:
         ECALModel=Fully3DImageClassification(Name+"ECAL", ECALShape, ECALWidth, ECALDepth,
                                              BatchSize, NClasses, WeightInitialization)
@@ -115,10 +116,23 @@ else:
 # Print out the Model Summary
 MyModel.Model.summary()
 
-# Configure the Loss and Optimizer
-# Todo. Currently only set in configfile via string and only default config possible.
-#
-# INSERT CODE HERE!
+# Configure the Optimizer, using optimizer configuration parameter.
+try:
+#if True:
+    from keras.optimizers import *
+    opt_Instance=eval(optimizer+"()")
+    opt_config=opt_Instance.get_config()
+    for param in opt_config:
+        try:
+            opt_config[param]=eval(param)
+        except Exception as detail:
+            print "Warning: optimizer configuration parameter",param,
+            print "was not set in configuration file. Will use default."
+    optimizer=optimizer_from_config({"class_name":optimizer,"config":opt_config})
+except Exception as detail:
+    print "Error:", detail
+    print "Warning: unable to instantiate and configure optimizer",optimizer,
+    print ". Will attempt to use default config."
 
 # Compile The Model
 print "Compiling Model."

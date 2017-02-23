@@ -6,9 +6,9 @@ from keras.layers import  BatchNormalization,Dropout,Flatten,Merge
 from keras.models import model_from_json
 
 class Fully3DImageClassification(ModelWrapper):
-    def __init__(self, Name, input_shape, width=0, depth=0, BatchSize=2048, N_classes=100, init=0):
+    def __init__(self, Name, input_shape, width=0, depth=0, BatchSize=2048, N_classes=100, init=0, **kwargs):
 
-        super(Fully3DImageClassification, self).__init__(Name)
+        super(Fully3DImageClassification, self).__init__(Name,**kwargs)
 
         self.width=width
         self.depth=depth
