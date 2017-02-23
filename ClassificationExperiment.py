@@ -53,14 +53,12 @@ Norms.append(1.)
 #  will be slow due to serial writing, unless it's parallelized.)
 if Premix:
     print "Using PremixGenerator."
-    InputFile="/home/afarbin/LCD/DLKit/LCD-Merged-All.h5"
     Train_genC = MakePreMixGenerator(InputFile,BatchSize=BatchSize, Max=NSamples,
                                      Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
     Test_genC  = MakePreMixGenerator(InputFile,BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,
                                      Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
 else:
     print "Using MixingGenerator."
-    FileSearch="/data/afarbin/LCD/*/*.h5"
     Train_genC = MakeMixingGenerator(FileSearch,BatchSize=BatchSize, Max=NSamples,
                                      Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
     Test_genC  = MakeMixingGenerator(FileSearch,BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,

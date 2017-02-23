@@ -3,6 +3,11 @@ import getopt
 from DLTools.Permutator import *
 import sys,argparse
 
+# Input for Premixed Generator
+InputFile="/home/afarbin/LCD/DLKit/LCD-Merged-All.h5"
+# Input for Mixing Generator
+FileSearch="/data/afarbin/LCD/*/*.h5"
+
 # Generation Model
 Config={
     "GenerationModel":"'Load'",
