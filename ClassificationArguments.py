@@ -10,7 +10,9 @@ parser.add_argument('--NoTrain', action="store_true")
 parser.add_argument('--NoAnalysis', action="store_true")
 parser.add_argument('--Test', action="store_true")
 parser.add_argument('-s',"--hyperparamset", default="0")
-parser.add_argument('--generator', action="store_true")
+parser.add_argument('--nopremix', action="store_true")
+parser.add_argument('--preload', action="store_true")
+#parser.add_argument('--generator', action="store_true")
 
 # Configure based on commandline flags... this really needs to be cleaned up
 args = parser.parse_args()
@@ -22,7 +24,9 @@ gpuid = args.gpuid
 if args.hyperparamset:
     HyperParamSet = int(args.hyperparamset)
 ConfigFile = args.config
-useGenerator = args.generator
+#useGenerator = args.generator
+Premix = not args.nopremix
+Preload= args.preload
 
 LoadModel=args.LoadModel
 

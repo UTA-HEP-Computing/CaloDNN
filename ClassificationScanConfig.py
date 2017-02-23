@@ -10,8 +10,6 @@ Config={
     "FractionTest":0.1,
     "NClasses":4,
 
-    "nb_worker":1, # This shouldn't change much... 
-    
     "M_min":0,
     "M_max":200,
 
@@ -19,77 +17,77 @@ Config={
 
     "Epochs":100,
     "BatchSize":1024,
-    "n_threads":4, # number of workers
+
+    # Configures the parallel data generator that read the input.
+    # These have been optimized by hand. Your system may have
+    # more optimal configuration.
+    "n_threads":4,  # Number of workers
     "multiplier":2, # Read N batches worth of data in each worker
-    
-    "LearningRate":0.005,
-    
-    "Decay":0.,
-    "Momentum":0.,
-    "Nesterov":0.,
 
     "WeightInitialization":"'normal'",
 
     "Mode":"'Classification'",
-    "NBins":200,
 
+    # Normalization determined by hand.
+    "ECAL":True,
+    "ECALNorm":150.,
+
+    # Normalization needs to be determined by hand. 
+    "HCAL":True,
+    "HCALNorm":150.,
+
+    # Set the ECAL/HCAL Width/Depth for the Dense model.
+    # Note that ECAL/HCAL Width/Depth are changed to "Width" and "Depth",
+    # if these parameters are set. 
+    "HCALWidth":32,
+    "HCALDepth":2,
+    "ECALWidth":32,
+    "ECALDepth":2,
+
+    # No specific reason to pick these. Needs study.
     "loss":"'categorical_crossentropy'",
-    "optimizer":"'rmsprop'"
+    "optimizer":"'rmsprop'",
 
+    # Place holders
+    # These DO NOT WORK.
+    "LearningRate":0.005,
+    "Decay":0.,
+    "Momentum":0.,
+    "Nesterov":0.,
 }
 
+# Parameters to scan and their scan points.
 Params={ "Width":[32,64,128,256,512],
          "Depth":range(1,10),
           }
 
+# Get all possible configurations.
 PS=Permutator(Params)
 Combos=PS.Permutations()
-
 print "HyperParameter Scan: ", len(Combos), "possible combiniations."
 
+# HyperParameter sets are numbered. You can iterate through them using
+# the -s option followed by an integer .
 if "HyperParamSet" in dir():
     i=int(HyperParamSet)
-else:
-# Set Seed based on time
-    random.seed()
-    i=int(round(len(Combos)*random.random()))
-    print "Randomly picking HyperParameter Set"
-
 print "Picked combination: ",i
+for k in Combos[i]: Config[k]=Combos[i][k]
 
-for k in Combos[i]:
-    Config[k]=Combos[i][k]
+# Use the same Width and/or Depth for ECAL/HCAL if these parameters 
+# "Width" and/or "Depth" are set.
+if "Width" in Config:
+    Config["ECALWidth"]=Config["Width"]
+    Config["HCALWidth"]=Config["Width"]
+if "Depth" in Config:
+    Config["ECALDepth"]=Config["Depth"]
+    Config["HCALDepth"]=Config["Depth"]
 
+# Build a name for the this configuration using the parameters we are
+# scanning.
 Name="CaloDNN"
-
 for MetaData in Params.keys():
     val=str(Config[MetaData]).replace('"',"")
     Name+="_"+val.replace("'","")
-
 print "Model Filename: ",Name
 
-# Possibilties for future reference
-WeightInitializations=[
-    "uniform",
-    "lecun_uniform",
-    "normal",
-    "identity",
-    "orthogonal",
-    "zero",
-    "glorot_normal",
-    "glorot_uniform",
-    "he_normal",
-    "he_uniform"]
-
-Losses=[
-    "mean_squared_error",
-    "mean_absolute_error",
-    "mean_absolute_percentage_error",
-    "mean_squared_logarithmic_error",
-    "squared_hinge",
-    "hinge",
-    "binary_crossentropy",
-    "categorical_crossentropy",
-    "poisson",
-    "cosine_proximity"]
 
