@@ -1,7 +1,5 @@
-
 #PBS -V
-
-cd /home/afarbin/Sherpa/DLKit/
+cd <Place path here>
 source setup.sh
 
 mkdir -p ScanLogs
@@ -9,7 +7,7 @@ output=ScanLogs/$PBS_ARRAYID.log
 
 echo $output > $output
 
-python -m MEDNN.Experiment &> $output
+python -m CaloDNN.ClassificationExperiment -s $PBS_ARRAYID &> $output
 
 
 

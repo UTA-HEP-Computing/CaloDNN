@@ -57,3 +57,11 @@ or all of your trained models:
 and use the model for inference, further training, or inspection of
 metadata (e.g. using `MyModel[0].MetaData`).
 
+For running in batch, edit `setup.sh` to properly setup your
+environment. Use the PBS submit script `ScanJob.sh` as a model for
+submitting to your system. If you have torque/PBS running, simply
+edit `ScanJob.sh` to point to right path and then:
+
+qsub -q <queuname> -t 0-44 CaloDNN/ScanJob.sh
+
+to (for example) submit 45 jobs, each with different configuration.
