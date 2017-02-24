@@ -41,8 +41,6 @@ class Fully3DImageClassification(ModelWrapper):
 
         self.Model=model
 
-    def Compile(self, Loss="categorical_crossentropy", Optimizer="rmsprop"):
-        self.Model.compile(loss=Loss, optimizer=Optimizer,metrics=["accuracy"])
         
 class MergerModel(ModelWrapper):
     def __init__(self, Name, Models, N_Classes, init):
