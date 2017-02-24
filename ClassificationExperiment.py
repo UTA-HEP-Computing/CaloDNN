@@ -14,7 +14,7 @@ if "Config" in dir():
 # Use "--Test" to run on less events and epochs.
 if TestMode:
     MaxEvents=int(2e4)
-    Epochs=2
+    Epochs=3
     print "Test Mode: Set MaxEvents to",MaxEvents," and Epochs to", Epochs
 
 # Calculate how many events will be used for training/validation.
@@ -53,15 +53,15 @@ Norms.append(1.)
 #  will be slow due to serial writing, unless it's parallelized.)
 if Premix:
     print "Using PremixGenerator."
-    Train_genC = MakePreMixGenerator(InputFile,BatchSize=BatchSize, Max=NSamples,
+    Train_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize, Max=NSamples,
                                      Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
-    Test_genC  = MakePreMixGenerator(InputFile,BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,
+    Test_genC  = MakePreMixGenerator(InputFile, BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,
                                      Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
 else:
     print "Using MixingGenerator."
-    Train_genC = MakeMixingGenerator(FileSearch,BatchSize=BatchSize, Max=NSamples,
+    Train_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize, Max=NSamples,
                                      Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
-    Test_genC  = MakeMixingGenerator(FileSearch,BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,
+    Test_genC  = MakeMixingGenerator(FileSearch, BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,
                                      Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
 
 Train_gen=Train_genC.Generator()
@@ -119,18 +119,50 @@ else:
 # Print out the Model Summary
 MyModel.Model.summary()
 
-
 # Compile The Model
 print "Compiling Model."
 MyModel.Compile() 
+
+# Function to help manage optional configurations. Checks and returns
+# if an object is in current scope. Return default value if not.
+def TestParam(param,default=False):
+    if param in dir():
+        return eval(param)
+    else:
+        return default
 
 # Train
 if Train:
     print "Training."
 
+    # Setup Callbacks
+    # These are all optional.
+    from DLTools.CallBacks import TimeStopping
+    from keras.callbacks import *
     callbacks=[]
-    # Stops too soon.
-    # callbacks=[EarlyStopping(monitor='val_loss', patience=2, verbose=1, mode='min') ]
+
+    if TestParam("ModelCheckpoint"):
+        MyModel.MakeOutputDir()
+        callbacks.append(ModelCheckpoint(MyModel.OutDir+"/Checkpoint.Weights.h5",
+                                         monitor=TestParam("monitor","val_loss"), 
+                                         save_best_only=TestParam("ModelCheckpoint_save_best_only"),
+                                         save_weights_only=TestParam("ModelCheckpoint_save_weights_only"),
+                                         mode=TestParam("ModelCheckpoint_mode","auto"),
+                                         period=TestParam("ModelCheckpoint_period",1),
+                                         verbose=0))
+
+    if TestParam("EarlyStopping"):
+        callbacks.append(keras.callbacks.EarlyStopping(monitor=TestParam("monitor","val_loss"), 
+                                                       min_delta=TestParam("EarlyStopping_min_delta",0.01),
+                                                       patience=TestParam("EarlyStopping_patience"),
+                                                       mode=TestParam("EarlyStopping_mode",'auto'),
+                                                       verbose=0))
+
+
+    if TestParam("RunningTime"):
+        print "Setting Runningtime to",args.runningtime,"."
+        callbacks.append(TimeStopping(TestParam(RunningTime),verbose=False))
+    
 
     # Don't fill the log files with progress bar.
     if sys.flags.interactive:
@@ -139,6 +171,8 @@ if Train:
         verbose=3
         
     MyModel.Model.fit_generator(Train_gen,
+                                validation_data=Test_gen,
+                                nb_val_samples=NTestSamples,
                                 nb_epoch=Epochs,
                                 samples_per_epoch=NSamples,
                                 callbacks=callbacks,
@@ -146,12 +180,12 @@ if Train:
                                 nb_worker=1,
                                 pickle_safe=False)
 
-    print "Evaluation score on test sample."
+    print "Evaluating score on test sample..."
     score = MyModel.Model.evaluate_generator(Test_gen,
                                              val_samples=NTestSamples, 
                                              nb_worker=1,
                                              pickle_safe=False)
-
+    print "Done."
     print "Final Score:", score
 
     # Save Model
@@ -173,9 +207,10 @@ if Analyze:
 
 # Make sure all of the Generators processes and threads are dead.
 # Not necessary... but ensures a graceful exit.
-for g in GeneratorClasses:
-    try:
-        g.StopFiller()
-        g.StopWorkers()
-    except:
-        pass
+if not sys.flags.interactive:
+    for g in GeneratorClasses:
+        try:
+            g.StopFiller()
+            g.StopWorkers()
+        except:
+            pass

@@ -3,15 +3,17 @@ parser = argparse.ArgumentParser()
 # Start by creating a new config file and changing the line below
 parser.add_argument('-C', '--config',default="CaloDNN/ClassificationScanConfig.py")
 
-parser.add_argument('-L', '--LoadModel',default=False)
-parser.add_argument('--gpu', dest='gpuid', default="")
-parser.add_argument('--cpu', action="store_true")
-parser.add_argument('--NoTrain', action="store_true")
-parser.add_argument('--NoAnalysis', action="store_true")
-parser.add_argument('--Test', action="store_true")
-parser.add_argument('-s',"--hyperparamset", default="0")
-parser.add_argument('--nopremix', action="store_true")
-parser.add_argument('--preload', action="store_true")
+parser.add_argument('-L', '--LoadModel',help='Loads a model from specified directory.', default=False)
+parser.add_argument('--gpu', dest='gpuid', default="", help='Use specified GPU.')
+parser.add_argument('--cpu', action="store_true", help='Use CPU.')
+parser.add_argument('--NoTrain', action="store_true", help="Do not run training.")
+parser.add_argument('--NoAnalysis', action="store_true", help="Do not run analysis.")
+parser.add_argument('--Test', action="store_true", help="Run in test mode (reduced examples and epochs).")
+parser.add_argument('-s',"--hyperparamset", default="0", help="Use specificed (by index) hyperparameter set.")
+parser.add_argument('--nopremix', action="store_true", help="Do not use the premixed inputfile. Mix on the fly.")
+parser.add_argument('--preload', action="store_true", help="Preload the data into memory. Caution: requires lots of memory.")
+parser.add_argument('-r',"--runningtime", default="0", help="End training after specified number of seconds.")
+
 #parser.add_argument('--generator', action="store_true")
 
 # Configure based on commandline flags... this really needs to be cleaned up
@@ -29,6 +31,9 @@ Premix = not args.nopremix
 Preload= args.preload
 
 LoadModel=args.LoadModel
+
+if int(args.runningtime)>0:
+    RunningTime=int(args.runningtime)
 
 # Configuration from PBS:
 if "PBS_ARRAYID" in os.environ:

@@ -15,11 +15,6 @@ Config={
     "FractionTest":0.1,
     "NClasses":4,
 
-    "M_min":0,
-    "M_max":200,
-
-    "Sigma":0.,
-
     "Epochs":100,
     "BatchSize":1024,
 
@@ -29,9 +24,8 @@ Config={
     "n_threads":4,  # Number of workers
     "multiplier":2, # Read N batches worth of data in each worker
 
+    # How weights are initialized
     "WeightInitialization":"'normal'",
-
-    "Mode":"'Classification'",
 
     # Normalization determined by hand.
     "ECAL":True,
@@ -52,14 +46,30 @@ Config={
     # No specific reason to pick these. Needs study.
     # Note that the optimizer name should be the class name (https://keras.io/optimizers/)
     "loss":"'categorical_crossentropy'",
-    "optimizer":"'RMSprop'",
 
-    # Place holders
-    # These DO NOT WORK.
-    "LearningRate":0.005,
-    "Decay":0.,
-    "Momentum":0.,
-    "Nesterov":0.,
+
+    # Specify the optimizer class name as True (see: https://keras.io/optimizers/)
+    # and parameters (using constructor keywords as parameter name).
+    # Note if parameter is not specified, default values are used.
+    "optimizer":"'RMSprop'",
+    "lr":0.001,
+    "rho":0.9,
+    "epsilon":1e-08,
+    "decay":0.0,
+
+    # Parameter monitored by Callbacks
+    "monitor":"'val_loss'",
+
+    # Active Callbacks
+    # Specify the CallBack class name as True (see: https://keras.io/callbacks/)
+    # and parameters (using constructor keywords as parameter name,
+    # with classname added).
+    "ModelCheckpoint":True,
+    "Model_Chekpoint_save_best_only":False,    
+
+    # Configure Running time callback
+    # Set RunningTime to a value to stop training after N seconds.
+    "RunningTime": False,
 }
 
 # Parameters to scan and their scan points.
