@@ -107,7 +107,7 @@ else:
         MyModel=HCALModel
 
     if HCAL and ECAL:
-        MyModel=MergerModel(Name+"Merger",[ECALModel,HCALModel], NClasses, WeightInitialization)
+        MyModel=MergerModel(Name+"_Merged",[ECALModel,HCALModel], NClasses, WeightInitialization)
 
     # Configure the Optimizer, using optimizer configuration parameter.
     MyModel.BuildOptimizer(optimizer,Config)
@@ -191,6 +191,9 @@ if Train:
     print "Done."
     print "Final Score:", score
 
+    # Store the parameters used for scanning for easier tables later:
+    for k in Params:
+        MyModel.MetaData[k]=Config[k]
     # Save Model
     MyModel.Save()
 else:

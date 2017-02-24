@@ -83,6 +83,7 @@ print "HyperParameter Scan: ", len(Combos), "possible combiniations."
 
 # HyperParameter sets are numbered. You can iterate through them using
 # the -s option followed by an integer .
+i=0
 if "HyperParamSet" in dir():
     i=int(HyperParamSet)
 print "Picked combination: ",i
