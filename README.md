@@ -4,7 +4,7 @@ Get the packages:
 
     git clone https://bitbucket.org/anomalousai/DLKit
     cd DLKit
-    git clone https://github.com/UTA-HEP-Computing/CaloNN
+    git clone https://github.com/UTA-HEP-Computing/CaloDNN
 
 Work from DLKit Directory:
 
