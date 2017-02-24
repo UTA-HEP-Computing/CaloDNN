@@ -62,6 +62,10 @@ environment. Use the PBS submit script `ScanJob.sh` as a model for
 submitting to your system. If you have torque/PBS running, simply
 edit `ScanJob.sh` to point to right path and then:
 
-qsub -q <queuname> -t 0-44 CaloDNN/ScanJob.sh
+     qsub -q <queuename> -t 0-44 CaloDNN/ScanJob.sh
 
-to (for example) submit 45 jobs, each with different configuration.
+to (for example) submit 45 jobs, each with different configuration. On
+the UTA-DL cluster, use `gpuqueue` as the queue. Note that the GPU
+used is determined by the enviroment variables set by torque. See
+`ClassificationScanConfig.py` for details. You may need to adjust this
+mechanism for your site.
