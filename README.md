@@ -67,5 +67,5 @@ edit `ScanJob.sh` to point to right path and then:
 to (for example) submit 45 jobs, each with different configuration. On
 the UTA-DL cluster, use `gpuqueue` as the queue. Note that the GPU
 used is determined by the enviroment variables set by torque. See
-`ClassificationScanConfig.py` for details. You may need to adjust this
+`ClassificationArguments.py` for details. You may need to adjust this
 mechanism for your site.
