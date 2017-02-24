@@ -10,6 +10,13 @@ Work from DLKit Directory:
 
     cd DLKit
 
+Make sure CUDA is setup if you are using GPUs (default) or add `--cpu`
+flag below to run on CPUs.
+
+Make sure requirements are installed:
+
+     pip install -r CaloDNN/requirements.txt
+
 Check out the arguments:
 
     python -m CaloDNN.ClassificationExperiment --help

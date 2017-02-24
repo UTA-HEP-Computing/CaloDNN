@@ -171,7 +171,7 @@ if Train:
     if sys.flags.interactive:
         verbose=1
     else:
-        verbose=3
+        verbose=2
         
     MyModel.Model.fit_generator(Train_gen,
                                 validation_data=Test_gen,
