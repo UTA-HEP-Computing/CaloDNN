@@ -22,3 +22,13 @@ Run an experiment:
 
 Look at the results in `TrainedModels` directory.
 
+You can load a trained model:
+
+    python -im TrainedModels/<ModelName>
+       
+or all of your trained models:
+
+    python -im TrainedModels/*
+
+and use the model for inference, further training, or inspection of metadata (e.g. using `MyModel[0].MetaData`).
+

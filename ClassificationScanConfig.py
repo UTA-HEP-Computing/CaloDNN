@@ -47,7 +47,6 @@ Config={
     # Note that the optimizer name should be the class name (https://keras.io/optimizers/)
     "loss":"'categorical_crossentropy'",
 
-
     # Specify the optimizer class name as True (see: https://keras.io/optimizers/)
     # and parameters (using constructor keywords as parameter name).
     # Note if parameter is not specified, default values are used.

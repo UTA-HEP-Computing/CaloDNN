@@ -111,10 +111,13 @@ else:
 
     # Configure the Optimizer, using optimizer configuration parameter.
     MyModel.BuildOptimizer(optimizer,Config)
-    MyModel.loss=loss
+    MyModel.Loss=loss
     # Build it
     MyModel.Build()
     print " Done."
+
+# Store the Configuration Dictionary
+MyModel.MetaData["Configuration"]=Config
 
 # Print out the Model Summary
 MyModel.Model.summary()
