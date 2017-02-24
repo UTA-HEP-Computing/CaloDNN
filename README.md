@@ -22,7 +22,9 @@ Check out the arguments:
     python -m CaloDNN.ClassificationExperiment --help
 
 Edit `CaloDNN/ClassificationScanConfig.py` to set input files and
-experiment configuration.
+experiment configuration. Please read the comments in the input
+section in `CaloDNN/ClassificationExperiments.py` for more details about
+reading input files.
 
 Run an experiment:
 
@@ -48,11 +50,11 @@ the Model MetaData) using:
 
 You can load a trained model:
 
-    python -im TrainedModels/<ModelName>
+    python -im DLTools.LoadModel TrainedModels/<ModelName>
        
 or all of your trained models:
 
-    python -im TrainedModels/*
+    python -im DLTools.LoadModel TrainedModels/*
 
 and use the model for inference, further training, or inspection of
 metadata (e.g. using `MyModel[0].MetaData`).
