@@ -1,5 +1,5 @@
 #PBS -V
-cd <Place path here>
+cd ~/LCD/DLKit
 source setup.sh
 
 mkdir -p ScanLogs

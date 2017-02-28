@@ -18,7 +18,6 @@ if TestMode:
     print "Test Mode: Set MaxEvents to",MaxEvents," and Epochs to", Epochs
 
 # Calculate how many events will be used for training/validation.
-NTestSamples=int(FractionTest*MaxEvents)
 NSamples=MaxEvents-NTestSamples
 
 # Load the Data
@@ -68,12 +67,8 @@ Train_gen=Train_genC.Generator()
 Test_gen=Test_genC.Generator()
 
 if Preload:
-    print "Keeping data in memory after first Epoch."
+    print "Keeping data in memory after first Epoch. Hope you have a lot of memory."
     Train_gen=Train_genC.PreloadGenerator()
-
-# We need data in memory for analysis.
-# If your FractionTest is high, you may run out of memory.
-if Preload or Analyze: 
     Test_gen=Test_genC.PreloadGenerator()
     
 # This should not be hardwired... open first file and pullout shapes?
@@ -128,11 +123,15 @@ MyModel.Compile()
 
 # Function to help manage optional configurations. Checks and returns
 # if an object is in current scope. Return default value if not.
-def TestParam(param,default=False):
-    if param in dir():
-        return eval(param)
-    else:
-        return default
+def TestParamC(Config):
+    def TestParamPrime(param,default=False):
+        if param in Config:
+            return eval(param)
+        else:
+            return default
+    return TestParamPrime
+
+TestParam=TestParamC(dir())
 
 # Train
 if Train:
@@ -157,7 +156,7 @@ if Train:
     if TestParam("EarlyStopping"):
         callbacks.append(keras.callbacks.EarlyStopping(monitor=TestParam("monitor","val_loss"), 
                                                        min_delta=TestParam("EarlyStopping_min_delta",0.01),
-                                                       patience=TestParam("EarlyStopping_patience"),
+                                                       patience=TestParam("EarlyStopping_patience",5),
                                                        mode=TestParam("EarlyStopping_mode",'auto'),
                                                        verbose=0))
 
@@ -171,7 +170,7 @@ if Train:
     if sys.flags.interactive:
         verbose=1
     else:
-        verbose=2
+        verbose=1
         
     MyModel.Model.fit_generator(Train_gen,
                                 validation_data=Test_gen,
@@ -202,6 +201,7 @@ else:
 # Analysis
 if Analyze:
     print "Running Analysis."
+    Test_genC.D.PreloadData()
     Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
 
     from CaloDNN.Analysis import MultiClassificationAnalysis

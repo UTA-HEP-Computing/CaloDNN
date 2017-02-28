@@ -2,20 +2,21 @@ import random
 import getopt
 from DLTools.Permutator import *
 import sys,argparse
+from numpy import arange
 
 # Input for Premixed Generator
-InputFile="/home/afarbin/LCD/DLKit/LCD-Merged-All.h5"
+InputFile="/data/afarbin/LCD/LCD-Merged-All.h5"
 # Input for Mixing Generator
 FileSearch="/data/afarbin/LCD/*/*.h5"
 
 # Generation Model
 Config={
     "GenerationModel":"'Load'",
-    "MaxEvents":int(.5e6),
-    "FractionTest":0.1,
+    "MaxEvents":int(3.e6),
+    "NTestSamples":100000,
     "NClasses":4,
 
-    "Epochs":100,
+    "Epochs":1000,
     "BatchSize":1024,
 
     # Configures the parallel data generator that read the input.
@@ -50,11 +51,9 @@ Config={
     # Specify the optimizer class name as True (see: https://keras.io/optimizers/)
     # and parameters (using constructor keywords as parameter name).
     # Note if parameter is not specified, default values are used.
-    "optimizer":"'RMSprop'",
-    "lr":0.001,
-    "rho":0.9,
-    "epsilon":1e-08,
-    "decay":0.0,
+    "optimizer":"'SGD'",
+    #"lr":0.01,    
+    #"decay":0.001,
 
     # Parameter monitored by Callbacks
     "monitor":"'val_loss'",
@@ -68,12 +67,14 @@ Config={
 
     # Configure Running time callback
     # Set RunningTime to a value to stop training after N seconds.
-    "RunningTime": False,
+    "RunningTime": 3600,
 }
 
 # Parameters to scan and their scan points.
 Params={ "Width":[32,64,128,256,512],
-         "Depth":range(1,10),
+         "Depth":range(1,5),
+         "lr":[0.1,0.01,0.001],
+         "decay":[0.1,0.01,0.001],
           }
 
 # Get all possible configurations.
