@@ -11,7 +11,6 @@ FileSearch="/data/afarbin/LCD/*/*.h5"
 
 # Generation Model
 Config={
-    "GenerationModel":"'Load'",
     "MaxEvents":int(3.e6),
     "NTestSamples":100000,
     "NClasses":4,

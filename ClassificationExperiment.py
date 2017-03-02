@@ -13,10 +13,15 @@ if "Config" in dir():
 
 # Use "--Test" to run on less events and epochs.
 if TestMode:
-    MaxEvents=int(20e4)
-    Epochs=100
+    MaxEvents=int(20e3)
+    NTestSamples=int(20e2)
+    Epochs=2
     print "Test Mode: Set MaxEvents to",MaxEvents,"and Epochs to", Epochs
 
+# Calculate how many events will be used for training/validation.
+NSamples=MaxEvents-NTestSamples
+
+    
 # Function to help manage optional configurations. Checks and returns
 # if an object is in current scope. Return default value if not.
 def TestDefaultParam(Config):
@@ -28,10 +33,6 @@ def TestDefaultParam(Config):
     return TestParamPrime
 
 TestDefaultParam=TestDefaultParam(dir())
-
-
-# Calculate how many events will be used for training/validation.
-NSamples=MaxEvents-NTestSamples
 
 # Load the Data
 from CaloDNN.LCDData import * 
