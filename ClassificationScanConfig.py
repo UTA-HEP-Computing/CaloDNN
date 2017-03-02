@@ -67,14 +67,16 @@ Config={
 
     # Configure Running time callback
     # Set RunningTime to a value to stop training after N seconds.
-    "RunningTime": 3600,
+    #"RunningTime": 2*3600,
+    "RunningTime": 120,
+    #"LoadPrevious":True
 }
 
 # Parameters to scan and their scan points.
 Params={ "Width":[32,64,128,256,512],
          "Depth":range(1,5),
-         "lr":[0.1,0.01,0.001],
-         "decay":[0.1,0.01,0.001],
+#         "lr":[0.1,0.01,0.001],
+#         "decay":[0.1,0.01,0.001],
           }
 
 # Get all possible configurations.
@@ -87,7 +89,7 @@ print "HyperParameter Scan: ", len(Combos), "possible combiniations."
 i=0
 if "HyperParamSet" in dir():
     i=int(HyperParamSet)
-print "Picked combination: ",i
+
 for k in Combos[i]: Config[k]=Combos[i][k]
 
 # Use the same Width and/or Depth for ECAL/HCAL if these parameters 
@@ -105,6 +107,15 @@ Name="CaloDNN"
 for MetaData in Params.keys():
     val=str(Config[MetaData]).replace('"',"")
     Name+="_"+val.replace("'","")
-print "Model Filename: ",Name
 
-
+if "HyperParamSet" in dir():
+    print "______________________________________"
+    print "ScanConfiguration"
+    print "______________________________________"
+    print "Picked combination: ",i
+    print "Combo["+str(i)+"]="+str(Combos[i])
+    print "Model Filename: ",Name
+    print "______________________________________"
+else:
+    for ii,c in enumerate(Combos):
+        print "Combo["+str(ii)+"]="+str(c)

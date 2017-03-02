@@ -13,9 +13,22 @@ if "Config" in dir():
 
 # Use "--Test" to run on less events and epochs.
 if TestMode:
-    MaxEvents=int(2e4)
-    Epochs=3
-    print "Test Mode: Set MaxEvents to",MaxEvents," and Epochs to", Epochs
+    MaxEvents=int(20e4)
+    Epochs=100
+    print "Test Mode: Set MaxEvents to",MaxEvents,"and Epochs to", Epochs
+
+# Function to help manage optional configurations. Checks and returns
+# if an object is in current scope. Return default value if not.
+def TestDefaultParam(Config):
+    def TestParamPrime(param,default=False):
+        if param in Config:
+            return eval(param)
+        else:
+            return default
+    return TestParamPrime
+
+TestDefaultParam=TestDefaultParam(dir())
+
 
 # Calculate how many events will be used for training/validation.
 NSamples=MaxEvents-NTestSamples
@@ -79,13 +92,19 @@ HCALShape= BatchSize, 5, 5, 60
 from DLTools.ModelWrapper import ModelWrapper
 from CaloDNN.Models import *
 
+
 # You can load a previous model using "-L" option with the model directory.
-if LoadModel: 
+if TestDefaultParam("LoadPreviousModel"):
+    print "Loading Model From:",LoadModel
+    if LoadModel[-1]=="/": LoadModel=LoadModel[:-1]
+    MyModel=ModelWrapper(Name=os.path.basename(LoadModel),InDir=os.path.dirname(LoadModel),
+                         LoadPrevious=True)
+if LoadModel:    
     print "Loading Model From:",LoadModel
     if LoadModel[-1]=="/": LoadModel=LoadModel[:-1]
     MyModel=ModelWrapper(Name=os.path.basename(LoadModel),InDir=os.path.dirname(LoadModel))
     MyModel.Load(LoadModel)
-else:
+elif not TestDefaultParam("LoadPreviousModel") or (TestDefaultParam("LoadPreviousModel") and not MyModel.Model):
     import keras
     print "Building Model...",
         
@@ -121,18 +140,6 @@ MyModel.Model.summary()
 print "Compiling Model."
 MyModel.Compile() 
 
-# Function to help manage optional configurations. Checks and returns
-# if an object is in current scope. Return default value if not.
-def TestParamC(Config):
-    def TestParamPrime(param,default=False):
-        if param in Config:
-            return eval(param)
-        else:
-            return default
-    return TestParamPrime
-
-TestParam=TestParamC(dir())
-
 # Train
 if Train:
     print "Training."
@@ -143,27 +150,27 @@ if Train:
     from keras.callbacks import *
     callbacks=[]
 
-    if TestParam("ModelCheckpoint"):
+    if TestDefaultParam("ModelCheckpoint"):
         MyModel.MakeOutputDir()
         callbacks.append(ModelCheckpoint(MyModel.OutDir+"/Checkpoint.Weights.h5",
-                                         monitor=TestParam("monitor","val_loss"), 
-                                         save_best_only=TestParam("ModelCheckpoint_save_best_only"),
-                                         save_weights_only=TestParam("ModelCheckpoint_save_weights_only"),
-                                         mode=TestParam("ModelCheckpoint_mode","auto"),
-                                         period=TestParam("ModelCheckpoint_period",1),
+                                         monitor=TestDefaultParam("monitor","val_loss"), 
+                                         save_best_only=TestDefaultParam("ModelCheckpoint_save_best_only"),
+                                         save_weights_only=TestDefaultParam("ModelCheckpoint_save_weights_only"),
+                                         mode=TestDefaultParam("ModelCheckpoint_mode","auto"),
+                                         period=TestDefaultParam("ModelCheckpoint_period",1),
                                          verbose=0))
 
-    if TestParam("EarlyStopping"):
-        callbacks.append(keras.callbacks.EarlyStopping(monitor=TestParam("monitor","val_loss"), 
-                                                       min_delta=TestParam("EarlyStopping_min_delta",0.01),
-                                                       patience=TestParam("EarlyStopping_patience",5),
-                                                       mode=TestParam("EarlyStopping_mode",'auto'),
+    if TestDefaultParam("EarlyStopping"):
+        callbacks.append(keras.callbacks.EarlyStopping(monitor=TestDefaultParam("monitor","val_loss"), 
+                                                       min_delta=TestDefaultParam("EarlyStopping_min_delta",0.01),
+                                                       patience=TestDefaultParam("EarlyStopping_patience"),
+                                                       mode=TestDefaultParam("EarlyStopping_mode",'auto'),
                                                        verbose=0))
 
 
-    if TestParam("RunningTime"):
-        print "Setting Runningtime to",args.runningtime,"."
-        callbacks.append(TimeStopping(TestParam(RunningTime),verbose=False))
+    if TestDefaultParam("RunningTime"):
+        print "Setting Runningtime to",RunningTime,"."
+        callbacks.append(TimeStopping(TestDefaultParam("RunningTime",3600*6),verbose=True))
     
 
     # Don't fill the log files with progress bar.
@@ -171,16 +178,18 @@ if Train:
         verbose=1
     else:
         verbose=1
-        
-    MyModel.Model.fit_generator(Train_gen,
-                                validation_data=Test_gen,
-                                nb_val_samples=NTestSamples,
-                                nb_epoch=Epochs,
-                                samples_per_epoch=NSamples,
-                                callbacks=callbacks,
-                                verbose=verbose, 
-                                nb_worker=1,
-                                pickle_safe=False)
+
+    MyModel.History = MyModel.Model.fit_generator(Train_gen,
+                                                  validation_data=Test_gen,
+                                                  nb_val_samples=NTestSamples,
+                                                  nb_epoch=Epochs,
+                                                  samples_per_epoch=NSamples,
+                                                  callbacks=callbacks,
+                                                  verbose=verbose, 
+                                                  nb_worker=1,
+                                                  pickle_safe=False)
+
+    
 
     print "Evaluating score on test sample..."
     score = MyModel.Model.evaluate_generator(Test_gen,
@@ -201,7 +210,7 @@ else:
 # Analysis
 if Analyze:
     print "Running Analysis."
-    Test_genC.D.PreloadData()
+    Test_genC.PreloadData()
     Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
 
     from CaloDNN.Analysis import MultiClassificationAnalysis

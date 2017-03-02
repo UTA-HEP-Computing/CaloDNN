@@ -1,4 +1,4 @@
-# Configuration of this job
+# Configuration of this jobConfig
 parser = argparse.ArgumentParser()
 # Start by creating a new config file and changing the line below
 parser.add_argument('-C', '--config',default="CaloDNN/ClassificationScanConfig.py", help="Use specified configuration file.")
