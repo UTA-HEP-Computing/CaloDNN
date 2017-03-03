@@ -93,13 +93,12 @@ HCALShape= BatchSize, 5, 5, 60
 from DLTools.ModelWrapper import ModelWrapper
 from CaloDNN.Models import *
 
-
-# You can load a previous model using "-L" option with the model directory.
+# You can automatically load the latest previous training of this model.
 if TestDefaultParam("LoadPreviousModel"):
-    print "Loading Model From:",LoadModel
-    if LoadModel[-1]=="/": LoadModel=LoadModel[:-1]
-    MyModel=ModelWrapper(Name=os.path.basename(LoadModel),InDir=os.path.dirname(LoadModel),
-                         LoadPrevious=True)
+    print "Loading Previous Model."
+    MyModel=ModelWrapper(Name=Name, LoadPrevious=True)
+    print "Loaded",MyModel.PreviousOutDir
+# You can load a previous model using "-L" option with the model directory.
 if LoadModel:    
     print "Loading Model From:",LoadModel
     if LoadModel[-1]=="/": LoadModel=LoadModel[:-1]

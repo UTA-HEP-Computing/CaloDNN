@@ -66,9 +66,10 @@ Config={
 
     # Configure Running time callback
     # Set RunningTime to a value to stop training after N seconds.
-    #"RunningTime": 2*3600,
-    "RunningTime": 120,
-    #"LoadPrevious":True
+    "RunningTime": 2*3600,
+
+    # Load last trained version of this model configuration. (based on Name var below)
+    "LoadPreviousModel":True
 }
 
 # Parameters to scan and their scan points.
