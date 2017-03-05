@@ -94,17 +94,22 @@ from DLTools.ModelWrapper import ModelWrapper
 from CaloDNN.Models import *
 
 # You can automatically load the latest previous training of this model.
-if TestDefaultParam("LoadPreviousModel"):
+if TestDefaultParam("LoadPreviousModel") and not LoadModel:
     print "Loading Previous Model."
-    MyModel=ModelWrapper(Name=Name, LoadPrevious=True)
-    print "Loaded",MyModel.PreviousOutDir
+    ModelName=Name
+    if ECAL and HCAL:
+        ModelName+="_Merged"
+    MyModel=ModelWrapper(Name=ModelName, LoadPrevious=True)
+
 # You can load a previous model using "-L" option with the model directory.
 if LoadModel:    
     print "Loading Model From:",LoadModel
     if LoadModel[-1]=="/": LoadModel=LoadModel[:-1]
     MyModel=ModelWrapper(Name=os.path.basename(LoadModel),InDir=os.path.dirname(LoadModel))
     MyModel.Load(LoadModel)
-elif not TestDefaultParam("LoadPreviousModel") or (TestDefaultParam("LoadPreviousModel") and not MyModel.Model):
+
+# Or Build the model from scratch
+if not MyModel.Model:
     import keras
     print "Building Model...",
         
@@ -130,6 +135,8 @@ elif not TestDefaultParam("LoadPreviousModel") or (TestDefaultParam("LoadPreviou
     MyModel.Build()
     print " Done."
 
+
+print "Output Directory:",MyModel.OutDir
 # Store the Configuration Dictionary
 MyModel.MetaData["Configuration"]=Config
 
@@ -138,7 +145,7 @@ MyModel.Model.summary()
 
 # Compile The Model
 print "Compiling Model."
-MyModel.Compile() 
+MyModel.Compile(Metrics=["accuracy"]) 
 
 # Train
 if Train:
@@ -170,7 +177,7 @@ if Train:
 
     if TestDefaultParam("RunningTime"):
         print "Setting Runningtime to",RunningTime,"."
-        callbacks.append(TimeStopping(TestDefaultParam("RunningTime",3600*6),verbose=True))
+        callbacks.append(TimeStopping(TestDefaultParam("RunningTime",3600*6),verbose=False))
     
 
     # Don't fill the log files with progress bar.
@@ -179,6 +186,14 @@ if Train:
     else:
         verbose=1
 
+    print "Evaluating score on test sample..."
+    score = MyModel.Model.evaluate_generator(Test_gen,
+                                             val_samples=NTestSamples, 
+                                             nb_worker=1,
+                                             pickle_safe=False)
+    print "Initial Score:", score
+    MyModel.MetaData["InitialScore"]=score
+        
     MyModel.History = MyModel.Model.fit_generator(Train_gen,
                                                   validation_data=Test_gen,
                                                   nb_val_samples=NTestSamples,
@@ -198,10 +213,12 @@ if Train:
                                              pickle_safe=False)
     print "Done."
     print "Final Score:", score
-
+    MyModel.MetaData["FinalScore"]=score
+    
     # Store the parameters used for scanning for easier tables later:
     for k in Params:
         MyModel.MetaData[k]=Config[k]
+
     # Save Model
     MyModel.Save()
 else:

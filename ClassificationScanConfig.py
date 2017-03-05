@@ -5,9 +5,12 @@ import sys,argparse
 from numpy import arange
 
 # Input for Premixed Generator
-InputFile="/data/afarbin/LCD/LCD-Merged-All.h5"
+#InputFile="/data/afarbin/LCD/LCD-Merged-All.h5"
+InputFile="/Users/afarbin/LCD/Data/LCD-Merged-All.h5"
+
 # Input for Mixing Generator
-FileSearch="/data/afarbin/LCD/*/*.h5"
+#FileSearch="/data/afarbin/LCD/*/*.h5"
+FileSearch="/Users/afarbin/LCD/Data/*/*.h5"
 
 # Generation Model
 Config={
