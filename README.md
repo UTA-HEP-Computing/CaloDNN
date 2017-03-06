@@ -23,16 +23,16 @@ Check out the arguments:
 
 Edit `CaloDNN/ClassificationScanConfig.py` to set input files and
 experiment configuration. Please read the comments in the input
-section in `CaloDNN/ClassificationExperiments.py` for more details about
-reading input files.
+section in `CaloDNN/ClassificationExperiments.py` for more details
+about reading input files.
 
 Run an experiment:
 
     python -m CaloDNN.ClassificationExperiment
 
 Run a series of experiments with different parameters (as configured
-in `Params` dictionary in `CaloDNN/ClassificationScanConfig.py`) by first seeing
-how many possible experiments:
+in `Params` dictionary in `CaloDNN/ClassificationScanConfig.py`) by
+first seeing how many possible experiments:
 
     python -m CaloDNN.ClassificationScanConfig
 
@@ -59,10 +59,18 @@ or all of your trained models:
 and use the model for inference, further training, or inspection of
 metadata (e.g. using `MyModel[0].MetaData`).
 
+To make standard plots, copy the example Jupyter notebook, run
+Jupyter, and edit as needed:
+
+   cp CaloDNN/AnalyzeScan.ipynb .
+   jupyter notebook AnalyzeScan.ipynb 
+
+## Notes for running on batch (for example on on UTA-DL Cluster)
+
 For running in batch, edit `setup.sh` to properly setup your
 environment. Use the PBS submit script `ScanJob.sh` as a model for
-submitting to your system. If you have torque/PBS running, simply
-edit `ScanJob.sh` to point to right path and then:
+submitting to your system. If you have torque/PBS running, simply edit
+`ScanJob.sh` to point to right path and then:
 
      qsub -q <queuename> -t 0-44 CaloDNN/ScanJob.sh
 
@@ -71,3 +79,19 @@ the UTA-DL cluster, use `gpuqueue` as the queue. Note that the GPU
 used is determined by the enviroment variables set by torque. See
 `ClassificationArguments.py` for details. You may need to adjust this
 mechanism for your site.
+
+## Notes for running Jupiter on UTA-DL Cluster
+
+For simplicity, run Jupyter on the gateway. Use the --no-browser
+switch to not start the browser from the server, and specify a port
+(your choice):
+
+   jupyter notebook AnalyzeScan.ipynb --no-browser --port=8888
+
+You'll have to use
+ssh-tunnel to see the Jupyter server (on your local system):
+
+ssh -NfL 8888:127.0.0.1:8888 orodruin.uta.edu
+
+Replace 8888 with the Jupyter server port. Navigate you browser to
+127.0.0.1:8888.
