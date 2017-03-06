@@ -3,14 +3,20 @@ import getopt
 from DLTools.Permutator import *
 import sys,argparse
 from numpy import arange
+import os
 
 # Input for Premixed Generator
-#InputFile="/data/afarbin/LCD/LCD-Merged-All.h5"
-InputFile="/Users/afarbin/LCD/Data/LCD-Merged-All.h5"
+# Find first existing instance
+PossibleInputFile= ["/data/afarbin/LCD/LCD-Merged-All.h5",
+                    "/Users/afarbin/LCD/Data/LCD-Merged-All.h5"]
+try:
+    InputFile=filter( os.path.isfile, PossibleInputFile )[0]
+except:
+    print "Warning: no inputfile found in",PossibleInputFile
 
 # Input for Mixing Generator
-#FileSearch="/data/afarbin/LCD/*/*.h5"
-FileSearch="/Users/afarbin/LCD/Data/*/*.h5"
+FileSearch="/data/afarbin/LCD/*/*.h5"
+#FileSearch="/Users/afarbin/LCD/Data/*/*.h5"
 
 # Generation Model
 Config={
