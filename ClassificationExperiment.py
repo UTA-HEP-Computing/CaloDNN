@@ -184,7 +184,7 @@ if Train:
     if sys.flags.interactive:
         verbose=1
     else:
-        verbose=1
+        verbose=1 # Set to 2
 
     print "Evaluating score on test sample..."
     score = MyModel.Model.evaluate_generator(Test_gen,
@@ -203,8 +203,6 @@ if Train:
                                                   verbose=verbose, 
                                                   nb_worker=1,
                                                   pickle_safe=False)
-
-    
 
     print "Evaluating score on test sample..."
     score = MyModel.Model.evaluate_generator(Test_gen,
@@ -231,12 +229,18 @@ if Analyze:
     Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
 
     from CaloDNN.Analysis import MultiClassificationAnalysis
-    result=MultiClassificationAnalysis(MyModel,[Test_X_ECAL,Test_X_HCAL],Test_Y,BatchSize,
-                                       IndexMap={0:'Pi0', 2:'ChPi', 3:'Gamma', 1:'Ele'})
+    result,NewMetaData=MultiClassificationAnalysis(MyModel,[Test_X_ECAL,Test_X_HCAL],Test_Y,BatchSize,PDFFileName="ROC",
+                                                   IndexMap={0:'Pi0', 2:'ChPi', 3:'Gamma', 1:'Ele'})
 
+    MyModel.MetaData.update(NewMetaData)
+
+    
     # Save again, in case Analysis put anything into the Model MetaData
-    MyModel.Save()
-
+    if not sys.flags.interactive:
+        MyModel.Save()
+    else:
+        print "Warning: Interactive Mode. Use MyModel.Save() to save Analysis Results."
+        
 # Make sure all of the Generators processes and threads are dead.
 # Not necessary... but ensures a graceful exit.
 if not sys.flags.interactive:

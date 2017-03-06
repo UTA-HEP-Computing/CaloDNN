@@ -20,10 +20,9 @@ GeneratorClasses=[]
 def ConstantNormalization(Norms):
     def NormalizationFunction(Ds):
         out = []
-        for i,D in enumerate(Ds):
-            D/=Norms[i]
-            out.append(D)
-        
+        for i,Norm in enumerate(Norms):
+            Ds[i]/=Norm
+            out.append(Ds[i])
         return out
     return NormalizationFunction
 
@@ -40,7 +39,7 @@ def MergeInputs():
         return [X[0],X[1]],X[2]
     return f
 
-def MakePreMixGenerator(InputFile,BatchSize,Norms=[150.,1.],  Max=-1,Skip=0, ECAL=True, HCAL=True, **kwargs):
+def MakePreMixGenerator(InputFile,BatchSize,Norms=[150.,1.],  Max=-1,Skip=0, ECAL=True, HCAL=True, Energy=False, **kwargs):
     datasets=[]
 
     if ECAL:
@@ -49,6 +48,9 @@ def MakePreMixGenerator(InputFile,BatchSize,Norms=[150.,1.],  Max=-1,Skip=0, ECA
         datasets.append("HCAL")
 
     datasets.append("OneHot")
+
+    if Energy:
+        datasets.append("target")
     
     if ECAL and HCAL:
         post_f=MergeInputs()
@@ -70,12 +72,13 @@ def MakePreMixGenerator(InputFile,BatchSize,Norms=[150.,1.],  Max=-1,Skip=0, ECA
 
 # Mix on the fly generator
 def LCDDataGenerator(datasetnames,batchsize=2048,FileSearch="/data/afarbin/LCD/*/*.h5",MaxFiles=-1,
-                     verbose=False, OneHot=True, ClassIndex=False, ClassIndexMap=False,n_threads=4,multiplier=1,timing=False):
+                     verbose=False, OneHot=True, ClassIndex=False, ClassIndexMap=False,n_threads=4,
+                     multiplier=1,timing=False):
     print "Searching in :",FileSearch
     Files = glob.glob(FileSearch)
 
-    if MaxFiles!=-1:
-        random.shuffle(Files)
+    #if MaxFiles!=-1:
+    #    random.shuffle(Files)
     Samples=[]
 
     FileCount=0
@@ -104,12 +107,15 @@ def LCDDataGenerator(datasetnames,batchsize=2048,FileSearch="/data/afarbin/LCD/*
     else:
         return GC
 
-def MakeMixingGenerator(FileSearch,BatchSize,Norms=[150.,1.], Max=-1, Skip=0,  ECAL=True, HCAL=True,  **kwargs):
+def MakeMixingGenerator(FileSearch,BatchSize,Norms=[150.,1.], Max=-1, Skip=0,  ECAL=True, HCAL=True, Energy=False, **kwargs):
 
     if ECAL:
         datasets.append("ECAL")
     if HCAL:
         datasets.append("HCAL")
+
+    if Energy:
+        datasets.append("target")
 
     if ECAL and HCAL:
         f=MergeInputs(ConstantNormalization(Norms))
