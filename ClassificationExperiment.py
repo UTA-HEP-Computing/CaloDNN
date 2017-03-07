@@ -228,7 +228,7 @@ if Analyze:
     Test_genC.PreloadData()
     Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
 
-    from CaloDNN.Analysis import MultiClassificationAnalysis
+    from DLAnalysis.Classification import MultiClassificationAnalysis
     result,NewMetaData=MultiClassificationAnalysis(MyModel,[Test_X_ECAL,Test_X_HCAL],Test_Y,BatchSize,PDFFileName="ROC",
                                                    IndexMap={0:'Pi0', 2:'ChPi', 3:'Gamma', 1:'Ele'})
 
