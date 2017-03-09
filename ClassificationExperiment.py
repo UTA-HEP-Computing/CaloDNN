@@ -15,7 +15,7 @@ if "Config" in dir():
 if TestMode:
     MaxEvents=int(20e3)
     NTestSamples=int(20e2)
-    Epochs=2
+    Epochs=10
     print "Test Mode: Set MaxEvents to",MaxEvents,"and Epochs to", Epochs
 
 # Calculate how many events will be used for training/validation.
@@ -153,9 +153,9 @@ if Train:
 
     # Setup Callbacks
     # These are all optional.
-    from DLTools.CallBacks import TimeStopping
+    from DLTools.CallBacks import TimeStopping, GracefulExit
     from keras.callbacks import *
-    callbacks=[]
+    callbacks=[ GracefulExit() ]
 
     if TestDefaultParam("ModelCheckpoint"):
         MyModel.MakeOutputDir()

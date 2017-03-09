@@ -55,8 +55,9 @@ class MergerModel(ModelWrapper):
 
         for m in self.Models:
             MModels.append(m.Model)
-            
-        model.add(Merge(MModels,mode='concat'))
+
+        if len(self.Models)>0:
+            model.add(Merge(MModels,mode='concat'))
         model.add(Dense(self.N_Classes, activation='softmax',init=self.init))
 
         self.Model=model
