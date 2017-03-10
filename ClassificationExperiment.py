@@ -158,7 +158,7 @@ if Train:
     callbacks=[ ]
 
     # Still testing this...
-    #callbacks.append[ GracefulExit() ]
+    #callbacks.append( GracefulExit() )
 
     if TestDefaultParam("ModelCheckpoint"):
         MyModel.MakeOutputDir()
