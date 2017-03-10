@@ -86,8 +86,8 @@ if Preload:
     Test_gen=Test_genC.PreloadGenerator()
     
 # This should not be hardwired... open first file and pullout shapes?
-ECALShape= BatchSize, 25, 25, 25
-HCALShape= BatchSize, 5, 5, 60
+ECALShape= None, 25, 25, 25
+HCALShape= None, 5, 5, 60
 
 # Build/Load the Model
 from DLTools.ModelWrapper import ModelWrapper
@@ -155,7 +155,10 @@ if Train:
     # These are all optional.
     from DLTools.CallBacks import TimeStopping, GracefulExit
     from keras.callbacks import *
-    callbacks=[ GracefulExit() ]
+    callbacks=[ ]
+
+    # Still testing this...
+    #callbacks.append[ GracefulExit() ]
 
     if TestDefaultParam("ModelCheckpoint"):
         MyModel.MakeOutputDir()
