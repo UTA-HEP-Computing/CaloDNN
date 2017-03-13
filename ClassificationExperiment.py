@@ -67,9 +67,9 @@ Norms.append(1.)
 if Premix:
     print "Using PremixGenerator."
     Train_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize, Max=NSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,verbose=True)
+                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
     Test_genC  = MakePreMixGenerator(InputFile, BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,verbose=True)
+                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
 else:
     print "Using MixingGenerator."
     Train_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize, Max=NSamples,
