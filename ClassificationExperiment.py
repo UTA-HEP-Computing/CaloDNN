@@ -67,9 +67,9 @@ Norms.append(1.)
 if Premix:
     print "Using PremixGenerator."
     Train_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize, Max=NSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
+                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,verbose=True)
     Test_genC  = MakePreMixGenerator(InputFile, BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
+                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,verbose=True)
 else:
     print "Using MixingGenerator."
     Train_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize, Max=NSamples,
@@ -187,7 +187,7 @@ if Train:
     if sys.flags.interactive:
         verbose=1
     else:
-        verbose=1 # Set to 2
+        verbose=2 # Set to 2
 
     print "Evaluating score on test sample..."
     score = MyModel.Model.evaluate_generator(Test_gen,
