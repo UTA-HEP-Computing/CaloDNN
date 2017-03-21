@@ -14,6 +14,7 @@ parser.add_argument('--nopremix', action="store_true", help="Do not use the prem
 parser.add_argument('--preload', action="store_true", help="Preload the data into memory. Caution: requires lots of memory.")
 parser.add_argument('-r',"--runningtime", default="0", help="End training after specified number of seconds.")
 parser.add_argument('-p',"--LoadPrevious", action="store_true", help="Load the last trained model.")
+parser.add_argument('--GracefulExit', action="store_true", help="Enable graceful exit via Ctrl-C or SIGTERM signal.")
 
 #parser.add_argument('--generator', action="store_true")
 
@@ -32,6 +33,7 @@ Premix = not args.nopremix
 Preload= args.preload
 LoadPreviousModel=args.LoadPrevious
 LoadModel=args.LoadModel
+GracefulExit=args.GracefulExit
 
 if int(args.runningtime)>0:
     RunningTime=int(args.runningtime)

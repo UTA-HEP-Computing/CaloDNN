@@ -67,15 +67,19 @@ Norms.append(1.)
 if Premix:
     print "Using PremixGenerator."
     Train_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize, Max=NSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
+                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,
+                                     catchsignals=GracefulExit)
     Test_genC  = MakePreMixGenerator(InputFile, BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
+                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,
+                                     catchsignals=GracefulExit)
 else:
     print "Using MixingGenerator."
     Train_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize, Max=NSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
+                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,
+                                     catchsignals=GracefulExit)
     Test_genC  = MakeMixingGenerator(FileSearch, BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads)
+                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,
+                                     catchsignals=GracefulExit)
 
 Train_gen=Train_genC.Generator()
 Test_gen=Test_genC.Generator()
@@ -158,7 +162,10 @@ if Train:
     callbacks=[ ]
 
     # Still testing this...
-    #callbacks.append( GracefulExit() )
+
+    if TestDefaultParam("GracefulExit",0):
+        print "Adding GracefulExit Callback."
+        callbacks.append( GracefulExit() )
 
     if TestDefaultParam("ModelCheckpoint"):
         MyModel.MakeOutputDir()
