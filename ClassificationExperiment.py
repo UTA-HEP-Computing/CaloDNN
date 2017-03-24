@@ -157,7 +157,6 @@ if not MyModel.Model:
                             OutputBase=OutputBase)
 
     # Configure the Optimizer, using optimizer configuration parameter.
-    MyModel.BuildOptimizer(optimizer,Config)
     MyModel.Loss=loss
     # Build it
     MyModel.Build()
@@ -173,6 +172,7 @@ MyModel.Model.summary()
 
 # Compile The Model
 print "Compiling Model."
+MyModel.BuildOptimizer(optimizer,Config)
 MyModel.Compile(Metrics=["accuracy"]) 
 
 # Train
@@ -219,7 +219,7 @@ if Train:
     if sys.flags.interactive:
         verbose=1
     else:
-        verbose=2 # Set to 2
+        verbose=1 # Set to 2
 
     print "Evaluating score on test sample..."
     score = MyModel.Model.evaluate_generator(Test_gen, steps=NTestSamples/BatchSize)
