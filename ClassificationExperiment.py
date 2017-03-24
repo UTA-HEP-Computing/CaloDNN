@@ -12,10 +12,12 @@ if "Config" in dir():
         exec(a+"="+str(Config[a]))
 
 # Use "--Test" to run on less events and epochs.
+OutputBase="TrainedModels"
 if TestMode:
     MaxEvents=int(20e3)
     NTestSamples=int(20e2)
     Epochs=10
+    OutputBase+=".Test"
     print "Test Mode: Set MaxEvents to",MaxEvents,"and Epochs to", Epochs
 
 # Calculate how many events will be used for training/validation.
@@ -61,25 +63,33 @@ Norms.append(1.)
 # 3. Load the data into memory, so Epochs>1 are significantly
 # accelerated. Uses a lot of memory. Works either 1 or 2 
 # above. (--preload)
-#
+
 # (Note 1 and 2 can be made automatic with a bit of effort, but
 #  will be slow due to serial writing, unless it's parallelized.)
 if Premix:
     print "Using PremixGenerator."
-    Train_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize, Max=NSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,
-                                     catchsignals=GracefulExit)
-    Test_genC  = MakePreMixGenerator(InputFile, BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,
-                                     catchsignals=GracefulExit)
+    Train_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize,
+                                     Max=NSamples, Norms=Norms,
+                                     ECAL=ECAL, HCAL=HCAL,
+                                     n_threads=n_threads,
+                                     catchsignals=UseGracefulExit,)
+    Test_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize,
+                                    Skip=NSamples, Max=NTestSamples,
+                                    Norms=Norms, ECAL=ECAL,
+                                    HCAL=HCAL, n_threads=n_threads,
+                                    catchsignals=UseGracefulExit)
 else:
     print "Using MixingGenerator."
-    Train_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize, Max=NSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,
-                                     catchsignals=GracefulExit)
-    Test_genC  = MakeMixingGenerator(FileSearch, BatchSize=BatchSize, Skip=NSamples, Max=NTestSamples,
-                                     Norms=Norms, ECAL=ECAL, HCAL=HCAL, n_threads=n_threads,
-                                     catchsignals=GracefulExit)
+    Train_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize,
+                                     Max=NSamples, Norms=Norms,
+                                     ECAL=ECAL, HCAL=HCAL,
+                                     n_threads=n_threads,
+                                     catchsignals=UseGracefulExit)
+    Test_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize,
+                                    Skip=NSamples, Max=NTestSamples,
+                                    Norms=Norms, ECAL=ECAL,
+                                    HCAL=HCAL, n_threads=n_threads,
+                                    catchsignals=UseGracefulExit)
 
 Train_gen=Train_genC.Generator()
 Test_gen=Test_genC.Generator()
@@ -99,38 +109,52 @@ from CaloDNN.Models import *
 
 # You can automatically load the latest previous training of this model.
 if TestDefaultParam("LoadPreviousModel") and not LoadModel:
-    print "Loading Previous Model."
+    print "Looking for Previous Model to load."
     ModelName=Name
     if ECAL and HCAL:
         ModelName+="_Merged"
-    MyModel=ModelWrapper(Name=ModelName, LoadPrevious=True)
+    MyModel=ModelWrapper(Name=ModelName, LoadPrevious=True,OutputBase=OutputBase)
 
 # You can load a previous model using "-L" option with the model directory.
 if LoadModel:    
     print "Loading Model From:",LoadModel
     if LoadModel[-1]=="/": LoadModel=LoadModel[:-1]
-    MyModel=ModelWrapper(Name=os.path.basename(LoadModel),InDir=os.path.dirname(LoadModel))
+    MyModel=ModelWrapper(Name=os.path.basename(LoadModel),InDir=os.path.dirname(LoadModel),
+                         OutputBase=OutputBase)
     MyModel.Load(LoadModel)
 
 # Or Build the model from scratch
 if not MyModel.Model:
     import keras
     print "Building Model...",
-        
+
     if ECAL:
         ECALModel=Fully3DImageClassification(Name+"ECAL", ECALShape, ECALWidth, ECALDepth,
-                                             BatchSize, NClasses, WeightInitialization)
+                                             BatchSize, NClasses,
+                                             init=TestDefaultParam("WeightInitialization",'normal'),
+                                             activation=TestDefaultParam("activation","relu"),
+                                             Dropout=TestDefaultParam("Dropout",0.5),
+                                             BatchNormalization=TestDefaultParam("BatchNormalization",False),
+                                             NoClassificationLayer=ECAL and HCAL,
+                                             OutputBase=OutputBase)
         ECALModel.Build()
         MyModel=ECALModel
 
     if HCAL:
         HCALModel=Fully3DImageClassification(Name+"HCAL", HCALShape, ECALWidth, HCALDepth,
-                                             BatchSize, NClasses, WeightInitialization)
+                                             BatchSize, NClasses,
+                                             init=TestDefaultParam("WeightInitialization",'normal'),
+                                             activation=TestDefaultParam("activation","relu"),
+                                             Dropout=TestDefaultParam("Dropout",0.5),
+                                             BatchNormalization=TestDefaultParam("BatchNormalization",False),
+                                             NoClassificationLayer=ECAL and HCAL,
+                                             OutputBase=OutputBase)
         HCALModel.Build()
         MyModel=HCALModel
 
     if HCAL and ECAL:
-        MyModel=MergerModel(Name+"_Merged",[ECALModel,HCALModel], NClasses, WeightInitialization)
+        MyModel=MergerModel(Name+"_Merged",[ECALModel,HCALModel], NClasses, WeightInitialization,
+                            OutputBase=OutputBase)
 
     # Configure the Optimizer, using optimizer configuration parameter.
     MyModel.BuildOptimizer(optimizer,Config)
@@ -163,11 +187,11 @@ if Train:
 
     # Still testing this...
 
-    if TestDefaultParam("GracefulExit",0):
+    if TestDefaultParam("UseGracefulExit",0):
         print "Adding GracefulExit Callback."
         callbacks.append( GracefulExit() )
 
-    if TestDefaultParam("ModelCheckpoint"):
+    if TestDefaultParam("ModelCheckpoint",False):
         MyModel.MakeOutputDir()
         callbacks.append(ModelCheckpoint(MyModel.OutDir+"/Checkpoint.Weights.h5",
                                          monitor=TestDefaultParam("monitor","val_loss"), 
@@ -187,7 +211,8 @@ if Train:
 
     if TestDefaultParam("RunningTime"):
         print "Setting Runningtime to",RunningTime,"."
-        callbacks.append(TimeStopping(TestDefaultParam("RunningTime",3600*6),verbose=False))
+        TSCB=TimeStopping(TestDefaultParam("RunningTime",3600*6),verbose=False)
+        callbacks.append(TSCB)
     
 
     # Don't fill the log files with progress bar.
@@ -197,32 +222,29 @@ if Train:
         verbose=2 # Set to 2
 
     print "Evaluating score on test sample..."
-    score = MyModel.Model.evaluate_generator(Test_gen,
-                                             val_samples=NTestSamples, 
-                                             nb_worker=1,
-                                             pickle_safe=False)
+    score = MyModel.Model.evaluate_generator(Test_gen, steps=NTestSamples/BatchSize)
+    
     print "Initial Score:", score
     MyModel.MetaData["InitialScore"]=score
         
     MyModel.History = MyModel.Model.fit_generator(Train_gen,
-                                                  validation_data=Test_gen,
-                                                  nb_val_samples=NTestSamples,
-                                                  nb_epoch=Epochs,
-                                                  samples_per_epoch=NSamples,
-                                                  callbacks=callbacks,
+                                                  steps_per_epoch=NSamples/BatchSize,
+                                                  epochs=Epochs,
                                                   verbose=verbose, 
-                                                  nb_worker=1,
-                                                  pickle_safe=False)
+                                                  validation_data=Test_gen,
+                                                  validation_steps=NTestSamples/BatchSize,
+                                                  callbacks=callbacks)
+
+    score = MyModel.Model.evaluate_generator(Test_gen, steps=NTestSamples/BatchSize)
+
 
     print "Evaluating score on test sample..."
-    score = MyModel.Model.evaluate_generator(Test_gen,
-                                             val_samples=NTestSamples, 
-                                             nb_worker=1,
-                                             pickle_safe=False)
-    print "Done."
     print "Final Score:", score
     MyModel.MetaData["FinalScore"]=score
-    
+
+    if TestDefaultParam("RunningTime"):
+        MyModel.MetaData["EpochTime"]=TSCB.history
+
     # Store the parameters used for scanning for easier tables later:
     for k in Params:
         MyModel.MetaData[k]=Config[k]

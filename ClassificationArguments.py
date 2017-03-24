@@ -33,7 +33,7 @@ Premix = not args.nopremix
 Preload= args.preload
 LoadPreviousModel=args.LoadPrevious
 LoadModel=args.LoadModel
-GracefulExit=args.GracefulExit
+UseGracefulExit=args.GracefulExit
 
 if int(args.runningtime)>0:
     RunningTime=int(args.runningtime)
