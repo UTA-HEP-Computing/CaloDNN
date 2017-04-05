@@ -57,8 +57,8 @@ Config={
     "loss":"'categorical_crossentropy'",
 
     "activation":"'relu'",
-    "BatchNormalization":True,
-    "Dropout":False,
+    "BatchNormLayers":True,
+    "DropoutLayers":True,
     
     # Specify the optimizer class name as True (see: https://keras.io/optimizers/)
     # and parameters (using constructor keywords as parameter name).
@@ -79,17 +79,18 @@ Config={
 
     # Configure Running time callback
     # Set RunningTime to a value to stop training after N seconds.
-    "RunningTime": 6*3600,
+    "RunningTime": 2*3600,
 
     # Load last trained version of this model configuration. (based on Name var below)
     "LoadPreviousModel":True
 }
 
 # Parameters to scan and their scan points.
-Params={ "Width":[32,64,128,256,512],
-         "Depth":range(1,5),
-         "lr":[0.1,0.01],
-         "decay":[0.1,0.01],
+Params={    "optimizer":["'RMSprop'","'Adam'","'SGD'"],
+            "Width":[32,64,128,256,512],
+            "Depth":range(1,5),
+            "lr":[0.01,0.001],
+            "decay":[0.01,0.001],
           }
 
 # Get all possible configurations.

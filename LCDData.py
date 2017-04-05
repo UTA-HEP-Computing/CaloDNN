@@ -72,8 +72,7 @@ def MakePreMixGenerator(InputFile,BatchSize,Norms=[150.,1.],  Max=-1,Skip=0, ECA
 
 # Mix on the fly generator
 def LCDDataGenerator(datasetnames,batchsize=2048,FileSearch="/data/afarbin/LCD/*/*.h5",MaxFiles=-1,
-                     verbose=False, OneHot=True, ClassIndex=False, ClassIndexMap=False,n_threads=4,
-                     multiplier=1,timing=False):
+                     verbose=False, OneHot=True, ClassIndex=False, ClassIndexMap=False):
     print "Searching in :",FileSearch
     Files = glob.glob(FileSearch)
 

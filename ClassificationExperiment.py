@@ -20,6 +20,10 @@ if TestMode:
     OutputBase+=".Test"
     print "Test Mode: Set MaxEvents to",MaxEvents,"and Epochs to", Epochs
 
+if LowMemMode:
+    n_threads=1
+    multiplier=1
+    
 # Calculate how many events will be used for training/validation.
 NSamples=MaxEvents-NTestSamples
 
@@ -71,23 +75,28 @@ if Premix:
     Train_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize,
                                      Max=NSamples, Norms=Norms,
                                      ECAL=ECAL, HCAL=HCAL,
-                                     n_threads=n_threads,
-                                     catchsignals=UseGracefulExit,)
+                                     n_threads=n_threads,multiplier=multiplier,
+                                     catchsignals=UseGracefulExit,
+                                     sharedmemory=not LowMemMode)
+
     Test_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize,
                                     Skip=NSamples, Max=NTestSamples,
-                                    Norms=Norms, ECAL=ECAL,
+                                    Norms=Norms,
+                                    ECAL=ECAL,multiplier=multiplier,
                                     HCAL=HCAL, n_threads=n_threads,
-                                    catchsignals=UseGracefulExit)
+                                    catchsignals=UseGracefulExit,
+                                    sharedmemory=not LowMemMode)
 else:
     print "Using MixingGenerator."
     Train_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize,
                                      Max=NSamples, Norms=Norms,
                                      ECAL=ECAL, HCAL=HCAL,
-                                     n_threads=n_threads,
+                                     n_threads=n_threads,multiplier=multiplier,
                                      catchsignals=UseGracefulExit)
     Test_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize,
                                     Skip=NSamples, Max=NTestSamples,
-                                    Norms=Norms, ECAL=ECAL,
+                                    Norms=Norms,
+                                    ECAL=ECAL,multiplier=multiplier,
                                     HCAL=HCAL, n_threads=n_threads,
                                     catchsignals=UseGracefulExit)
 
@@ -123,6 +132,11 @@ if LoadModel:
                          OutputBase=OutputBase)
     MyModel.Load(LoadModel)
 
+if not MyModel.Model:
+    FailedLoad=True
+else:
+    FailedLoad=False
+
 # Or Build the model from scratch
 if not MyModel.Model:
     import keras
@@ -133,8 +147,8 @@ if not MyModel.Model:
                                              BatchSize, NClasses,
                                              init=TestDefaultParam("WeightInitialization",'normal'),
                                              activation=TestDefaultParam("activation","relu"),
-                                             Dropout=TestDefaultParam("Dropout",0.5),
-                                             BatchNormalization=TestDefaultParam("BatchNormalization",False),
+                                             Dropout=TestDefaultParam("DropoutLayers",0.5),
+                                             BatchNormalization=TestDefaultParam("BatchNormLayers",False),
                                              NoClassificationLayer=ECAL and HCAL,
                                              OutputBase=OutputBase)
         ECALModel.Build()
@@ -145,8 +159,8 @@ if not MyModel.Model:
                                              BatchSize, NClasses,
                                              init=TestDefaultParam("WeightInitialization",'normal'),
                                              activation=TestDefaultParam("activation","relu"),
-                                             Dropout=TestDefaultParam("Dropout",0.5),
-                                             BatchNormalization=TestDefaultParam("BatchNormalization",False),
+                                             Dropout=TestDefaultParam("DropoutLayers",0.5),
+                                             BatchNormalization=TestDefaultParam("BatchNormLayers",False),
                                              NoClassificationLayer=ECAL and HCAL,
                                              OutputBase=OutputBase)
         HCALModel.Build()
@@ -166,6 +180,8 @@ if not MyModel.Model:
 print "Output Directory:",MyModel.OutDir
 # Store the Configuration Dictionary
 MyModel.MetaData["Configuration"]=Config
+if "HyperParamSet" in dir():
+    MyModel.MetaData["HyperParamSet"]=HyperParamSet
 
 # Print out the Model Summary
 MyModel.Model.summary()
@@ -176,9 +192,8 @@ MyModel.BuildOptimizer(optimizer,Config)
 MyModel.Compile(Metrics=["accuracy"]) 
 
 # Train
-if Train:
+if Train or (RecoverMode and FailedLoad):
     print "Training."
-
     # Setup Callbacks
     # These are all optional.
     from DLTools.CallBacks import TimeStopping, GracefulExit
@@ -228,7 +243,7 @@ if Train:
     MyModel.MetaData["InitialScore"]=score
         
     MyModel.History = MyModel.Model.fit_generator(Train_gen,
-                                                  steps_per_epoch=NSamples/BatchSize,
+                                                  steps_per_epoch=(NSamples/BatchSize),
                                                   epochs=Epochs,
                                                   verbose=verbose, 
                                                   validation_data=Test_gen,
@@ -257,6 +272,19 @@ else:
 # Analysis
 if Analyze:
     print "Running Analysis."
+    if Premix:
+        Test_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize,
+                                        Skip=NSamples, Max=NTestSamples,
+                                        Norms=Norms, ECAL=ECAL,
+                                        HCAL=HCAL, n_threads=n_threads,
+                                        catchsignals=UseGracefulExit)
+    else:
+        Test_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize,
+                                        Skip=NSamples, Max=NTestSamples,
+                                        Norms=Norms, ECAL=ECAL,
+                                        HCAL=HCAL, n_threads=n_threads,
+                                        catchsignals=UseGracefulExit)
+
     Test_genC.PreloadData()
     Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
 
@@ -265,7 +293,6 @@ if Analyze:
                                                    IndexMap={0:'Pi0', 2:'ChPi', 3:'Gamma', 1:'Ele'})
 
     MyModel.MetaData.update(NewMetaData)
-
     
     # Save again, in case Analysis put anything into the Model MetaData
     if not sys.flags.interactive:
@@ -275,10 +302,10 @@ if Analyze:
         
 # Make sure all of the Generators processes and threads are dead.
 # Not necessary... but ensures a graceful exit.
-if not sys.flags.interactive:
-    for g in GeneratorClasses:
-        try:
-            g.StopFiller()
-            g.StopWorkers()
-        except:
-            pass
+# if not sys.flags.interactive:
+#     for g in GeneratorClasses:
+#         try:
+#             g.StopFiller()
+#             g.StopWorkers()
+#         except:
+#             pass
