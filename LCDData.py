@@ -39,9 +39,10 @@ def MergeInputs():
         return [X[0],X[1]],X[2]
     return f
 
-def MakePreMixGenerator(InputFile,BatchSize,Norms=[150.,1.],  Max=-1,Skip=0, ECAL=True, HCAL=True, Energy=False, **kwargs):
+def MakePreMixGenerator(InputFile,BatchSize,Norms=[150.,1.],
+                        Max=-1,Skip=0, ECAL=True, HCAL=True, Energy=False, 
+                        **kwargs):
     datasets=[]
-
     if ECAL:
         datasets.append("ECAL")
     if HCAL:
