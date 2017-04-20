@@ -14,6 +14,7 @@ import h5py
 import glob,os,sys
 import random
 from time import time
+import numpy as np
 
 GeneratorClasses=[]
 
@@ -22,6 +23,18 @@ def ConstantNormalization(Norms):
         out = []
         for i,Norm in enumerate(Norms):
             Ds[i]/=Norm
+            out.append(Ds[i])
+        return out
+    return NormalizationFunction
+
+def LCDNormalization(Norms):
+    def NormalizationFunction(Ds):
+        out = []
+        for i,Norm in enumerate(Norms):
+            if type(Norm) == float:
+                Ds[i]/=Norm
+            if type(Norm) == str and Norm=="NonLinear" :
+                Ds[i] = np.tanh(np.sign(Ds[i]) * np.log(np.abs(Ds[i]) + 1.0) / 2.0)
             out.append(Ds[i])
         return out
     return NormalizationFunction
@@ -58,7 +71,7 @@ def MakePreMixGenerator(InputFile,BatchSize,Norms=[150.,1.],
     else:
         post_f=False
         
-    pre_f=ConstantNormalization(Norms)
+    pre_f=LCDNormalization(Norms)
     
     G=DLh5FileGenerator(files=[InputFile], datasets=datasets,
                         batchsize=BatchSize,
@@ -118,9 +131,9 @@ def MakeMixingGenerator(FileSearch,BatchSize,Norms=[150.,1.], Max=-1, Skip=0,  E
         datasets.append("target")
 
     if ECAL and HCAL:
-        f=MergeInputs(ConstantNormalization(Norms))
+        f=MergeInputs(LCDNormalization(Norms))
     else:
-        f=ConstantNormalization(Norms)
+        f=LCDNormalization(Norms)
 
 
     [G,IndexMap]=LCDDataGenerator(datasets, BatchSize,

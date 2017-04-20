@@ -30,7 +30,7 @@ Config={
     # Configures the parallel data generator that read the input.
     # These have been optimized by hand. Your system may have
     # more optimal configuration.
-    "n_threads":4,  # Number of workers
+    "n_threads":10,  # Number of workers
     "multiplier":2, # Read N batches worth of data in each worker
 
     # How weights are initialized
@@ -38,11 +38,11 @@ Config={
 
     # Normalization determined by hand.
     "ECAL":True,
-    "ECALNorm":150.,
+    "ECALNorm":"'NonLinear'",
 
     # Normalization needs to be determined by hand. 
     "HCAL":True,
-    "HCALNorm":150.,
+    "HCALNorm":"'NonLinear'",
 
     # Set the ECAL/HCAL Width/Depth for the Dense model.
     # Note that ECAL/HCAL Width/Depth are changed to "Width" and "Depth",
@@ -79,7 +79,7 @@ Config={
 
     # Configure Running time callback
     # Set RunningTime to a value to stop training after N seconds.
-    "RunningTime": 7*3600,
+    "RunningTime": 1*3600,
 
     # Load last trained version of this model configuration. (based on Name var below)
     "LoadPreviousModel":True

@@ -8,6 +8,7 @@ parser.add_argument('--gpu', dest='gpuid', default="", help='Use specified GPU.'
 parser.add_argument('--cpu', action="store_true", help='Use CPU.')
 parser.add_argument('--NoTrain', action="store_true", help="Do not run training.")
 parser.add_argument('--NoAnalysis', action="store_true", help="Do not run analysis.")
+parser.add_argument('--NoModel', action="store_true", help="Do not build or load model.")
 parser.add_argument('--LowMem', action="store_true", help="Minimize Memory Usage.")
 parser.add_argument('--Test', action="store_true", help="Run in test mode (reduced examples and epochs).")
 parser.add_argument('--Recover', action="store_true", help="Train only if fail to load model (use with --NoTrain and --Load or --LoadPrevious).")
@@ -24,6 +25,11 @@ parser.add_argument('--GracefulExit', action="store_true", help="Enable graceful
 args = parser.parse_args()
 Train = not args.NoTrain
 Analyze = not args.NoAnalysis
+BuildModel = not args.NoModel
+if not BuildModel:
+    Train=False
+    Analyzer=False
+
 TestMode = args.Test
 RecoverMode = args.Recover
 UseGPU = not args.cpu

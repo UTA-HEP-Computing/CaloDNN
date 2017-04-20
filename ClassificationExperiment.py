@@ -117,7 +117,7 @@ from DLTools.ModelWrapper import ModelWrapper
 from CaloDNN.Models import *
 
 # You can automatically load the latest previous training of this model.
-if TestDefaultParam("LoadPreviousModel") and not LoadModel:
+if TestDefaultParam("LoadPreviousModel") and not LoadModel and BuildModel:
     print "Looking for Previous Model to load."
     ModelName=Name
     if ECAL and HCAL:
@@ -125,7 +125,7 @@ if TestDefaultParam("LoadPreviousModel") and not LoadModel:
     MyModel=ModelWrapper(Name=ModelName, LoadPrevious=True,OutputBase=OutputBase)
 
 # You can load a previous model using "-L" option with the model directory.
-if LoadModel:    
+if LoadModel and BuildModel:    
     print "Loading Model From:",LoadModel
     if LoadModel[-1]=="/": LoadModel=LoadModel[:-1]
     MyModel=ModelWrapper(Name=os.path.basename(LoadModel),InDir=os.path.dirname(LoadModel),
@@ -138,7 +138,7 @@ else:
     FailedLoad=False
 
 # Or Build the model from scratch
-if not MyModel.Model:
+if not MyModel.Model and BuildModel:
     import keras
     print "Building Model...",
 
