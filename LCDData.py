@@ -33,7 +33,7 @@ def LCDNormalization(Norms):
         for i,Norm in enumerate(Norms):
             if type(Norm) == float:
                 Ds[i]/=Norm
-            if type(Norm) == str and Norm=="NonLinear" :
+            if type(Norm) == str and Norm.lower()=="nonlinear" :
                 Ds[i] = np.tanh(np.sign(Ds[i]) * np.log(np.abs(Ds[i]) + 1.0) / 2.0)
             out.append(Ds[i])
         return out
