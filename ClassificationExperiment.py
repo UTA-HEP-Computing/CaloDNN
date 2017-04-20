@@ -132,13 +132,13 @@ if LoadModel and BuildModel:
                          OutputBase=OutputBase)
     MyModel.Load(LoadModel)
 
-if not MyModel.Model:
+if BuildModel and not MyModel.Model:
     FailedLoad=True
 else:
     FailedLoad=False
 
 # Or Build the model from scratch
-if not MyModel.Model and BuildModel:
+if BuildModel and not MyModel.Model :
     import keras
     print "Building Model...",
 
@@ -176,20 +176,20 @@ if not MyModel.Model and BuildModel:
     MyModel.Build()
     print " Done."
 
+if BuildModel:
+    print "Output Directory:",MyModel.OutDir
+    # Store the Configuration Dictionary
+    MyModel.MetaData["Configuration"]=Config
+    if "HyperParamSet" in dir():
+        MyModel.MetaData["HyperParamSet"]=HyperParamSet
 
-print "Output Directory:",MyModel.OutDir
-# Store the Configuration Dictionary
-MyModel.MetaData["Configuration"]=Config
-if "HyperParamSet" in dir():
-    MyModel.MetaData["HyperParamSet"]=HyperParamSet
+    # Print out the Model Summary
+    MyModel.Model.summary()
 
-# Print out the Model Summary
-MyModel.Model.summary()
-
-# Compile The Model
-print "Compiling Model."
-MyModel.BuildOptimizer(optimizer,Config)
-MyModel.Compile(Metrics=["accuracy"]) 
+    # Compile The Model
+    print "Compiling Model."
+    MyModel.BuildOptimizer(optimizer,Config)
+    MyModel.Compile(Metrics=["accuracy"]) 
 
 # Train
 if Train or (RecoverMode and FailedLoad):

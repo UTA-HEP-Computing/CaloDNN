@@ -28,7 +28,7 @@ Analyze = not args.NoAnalysis
 BuildModel = not args.NoModel
 if not BuildModel:
     Train=False
-    Analyzer=False
+    Analyze=False
 
 TestMode = args.Test
 RecoverMode = args.Recover
