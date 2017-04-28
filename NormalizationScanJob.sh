@@ -11,7 +11,7 @@ echo Queue: $PBS_QUEUE >> $output
 cd ~/LCD/DLKit
 source setup.sh
 
-python -m CaloDNN.ClassificationExperiment -C NormalizationScanConfig.py -s $PBS_ARRAYID &>> $output
+python -m CaloDNN.ClassificationExperiment -C CaloDNN/NormalizationScanConfig.py -s $PBS_ARRAYID &>> $output
 
 
 

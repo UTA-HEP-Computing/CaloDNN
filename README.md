@@ -22,7 +22,7 @@ flag below to run on CPUs.
 
 Make sure requirements are installed:
 
-     pip install -r CaloDNN/requirements.txt
+    pip install -r CaloDNN/requirements.txt
 
 ## Running
 
@@ -77,14 +77,14 @@ After a scan, examine the progress and status of all of your trained
 models, by copying the example Jupyter notebook, running Jupyter, and
 editing as needed:
 
-   cp CaloDNN/AnalyzeScan.ipynb .
-   jupyter notebook AnalyzeScan.ipynb 
+    cp CaloDNN/AnalyzeScan.ipynb .
+    jupyter notebook AnalyzeScan.ipynb 
 
 Or analyze the performance of a specific model, looking at ROC curves or
 energy dependence of the performance:
 
-   cp CaloDNN/AnalyzePerformace.ipynb .
-   jupyter notebook AnalyzePerformance.ipynb 
+    cp CaloDNN/AnalyzePerformace.ipynb .
+    jupyter notebook AnalyzePerformance.ipynb 
 
 ## Notes for running on batch (for example on on UTA-DL Cluster)
 
@@ -93,7 +93,7 @@ environment. Use the PBS submit script `ScanJob.sh` as a model for
 submitting to your system. If you have torque/PBS running, simply edit
 `ScanJob.sh` to point to right path and then:
 
-     qsub -q <queuename> -t 0-19 CaloDNN/ScanJob.sh
+    qsub -q <queuename> -t 0-19 CaloDNN/ScanJob.sh
 
 to (for example) submit 20 jobs, each with different configuration.
 On the HEP-DL cluster, use `gpu_queue` as the queue. Note that the GPU
@@ -105,7 +105,7 @@ If you use the `GracefulExit` callback (comment/uncomment line in
 `ClassificationExperiment.py`), you can gracefully stop your running
 jobs by delaying the SIGTERM and SIGKILL signals. For example:
 
-qdel -W 1200 all
+    qdel -W 1200 all
 
 will send a SIGTERM signal to job, which will cause it to stop
 training and exit normally at end of current epoch. It will set a
@@ -119,7 +119,7 @@ automatically restart at the end of the last successful training run.
 You can see the progress of running jobs (assuming common file
 system):
 
-tail -f ScanLogs/*
+    tail -f ScanLogs/*
 
 ## Notes for running Jupiter on UTA-DL Cluster
 
@@ -127,12 +127,13 @@ For simplicity, run Jupyter on the gateway. Use the --no-browser
 switch to not start the browser from the server, and specify a port
 (your choice):
 
-   jupyter notebook AnalyzeScan.ipynb --no-browser --port=8888
+    jupyter notebook AnalyzeScan.ipynb --no-browser --port=8888
 
 You'll have to use ssh-tunnel to see the Jupyter server (on your local
 system):
 
-ssh -NfL 8888:127.0.0.1:8888 orodruin.uta.edu
+    ssh -NfL 8888:127.0.0.1:8888 orodruin.uta.edu
 
 Replace 8888 with the Jupyter server port. Navigate you browser to
 127.0.0.1:8888.
+
