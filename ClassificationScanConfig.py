@@ -5,18 +5,17 @@ import sys,argparse
 from numpy import arange
 import os
 
-# Input for Premixed Generator
-# Find first existing instance
-PossibleInputFile= ["/data/afarbin/LCD/LCD-Merged-All.h5",
-                    "/Users/afarbin/LCD/Data/LCD-Merged-All.h5"]
-try:
-    InputFile=filter( os.path.isfile, PossibleInputFile )[0]
-except:
-    print "Warning: no inputfile found in",PossibleInputFile
+from multiprocessing import cpu_count
+from DLTools.Utils import gpu_count
+
+max_threads=12
+n_threads=int(min(round(cpu_count()/gpu_count()),max_threads))
+print "Found",cpu_count(),"CPUs and",gpu_count(),"GPUs. Using",n_threads,"threads. max_threads =",max_threads
+
+Particles=["ChPi","Gamma","Pi0","Ele"]
 
 # Input for Mixing Generator
-FileSearch="/data/afarbin/LCD/*/*.h5"
-#FileSearch="/Users/afarbin/LCD/Data/*/*.h5"
+FileSearch="/data/LCD/*/*.h5"
 
 # Generation Model
 Config={
@@ -30,8 +29,9 @@ Config={
     # Configures the parallel data generator that read the input.
     # These have been optimized by hand. Your system may have
     # more optimal configuration.
-    "n_threads":10,  # Number of workers
-    "multiplier":2, # Read N batches worth of data in each worker
+    "n_threads":n_threads,  # Number of workers
+    "n_threads_cache":5,
+    "multiplier":1, # Read N batches worth of data in each worker
 
     # How weights are initialized
     "WeightInitialization":"'normal'",

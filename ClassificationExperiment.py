@@ -70,47 +70,68 @@ Norms.append(1.)
 
 # (Note 1 and 2 can be made automatic with a bit of effort, but
 #  will be slow due to serial writing, unless it's parallelized.)
-if Premix:
-    print "Using PremixGenerator."
-    Train_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize,
-                                     Max=NSamples, Norms=Norms,
-                                     ECAL=ECAL, HCAL=HCAL,
-                                     n_threads=n_threads,multiplier=multiplier,
-                                     catchsignals=UseGracefulExit,
-                                     sharedmemory=not LowMemMode)
 
-    Test_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize,
-                                    Skip=NSamples, Max=NTestSamples,
-                                    Norms=Norms,
-                                    ECAL=ECAL,multiplier=multiplier,
-                                    HCAL=HCAL, n_threads=n_threads,
-                                    catchsignals=UseGracefulExit,
-                                    sharedmemory=not LowMemMode)
-else:
-    print "Using MixingGenerator."
-    Train_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize,
-                                     Max=NSamples, Norms=Norms,
-                                     ECAL=ECAL, HCAL=HCAL,
-                                     n_threads=n_threads,multiplier=multiplier,
-                                     catchsignals=UseGracefulExit)
-    Test_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize,
-                                    Skip=NSamples, Max=NTestSamples,
-                                    Norms=Norms,
-                                    ECAL=ECAL,multiplier=multiplier,
-                                    HCAL=HCAL, n_threads=n_threads,
-                                    catchsignals=UseGracefulExit)
+# Load the Data
+from CaloDNN.LoadData import * 
 
-Train_gen=Train_genC.Generator()
-Test_gen=Test_genC.Generator()
+datasets=[]
+shapes=[]
 
-if Preload:
-    print "Keeping data in memory after first Epoch. Hope you have a lot of memory."
-    Train_gen=Train_genC.PreloadGenerator()
-    Test_gen=Test_genC.PreloadGenerator()
-    
-# This should not be hardwired... open first file and pullout shapes?
 ECALShape= None, 25, 25, 25
 HCALShape= None, 5, 5, 60
+
+if ECAL:
+    datasets.append("ECAL")
+    shapes.append((BatchSize*multiplier,)+ECALShape[1:])
+if HCAL:
+    datasets.append("HCAL")
+    shapes.append((BatchSize*multiplier,)+HCALShape[1:])
+
+shapes.append((BatchSize*multiplier, NClasses))
+
+TrainSampleList,TestSampleList=DivideFiles(FileSearch,[float(NSamples)/MaxEvents,float(NTestSamples)/MaxEvents],
+                                           datasetnames=datasets,
+                                           Particles=Particles)
+
+def MakeGenerator(SampleList,NSamples,
+                  cachefile="CaloDNN-LoadDataTest-Cache.h5",**kwargs):
+    if ECAL and HCAL:
+        post_f=MergeInputs()
+    else:
+        post_f=False
+        
+    pre_f=LCDNormalization(Norms)
+
+    return DLMultiClassGenerator(SampleList, batchsize=BatchSize, max=NSamples,
+                                 shapes=shapes,
+                                 preprocessfunction=pre_f,
+                                 postprocessfunction=post_f,
+                                 n_threads=n_threads,
+                                 multiplier=multiplier,
+                                 cachefile=cachefile,
+                                 **kwargs)
+
+# Use DLGenerators to read data
+Train_genC = MakeGenerator(TrainSampleList, NSamples,
+                           cachefile="/tmp/CaloDNN-LCD-TrainEvent-Cache.h5")
+
+Test_genC = MakeGenerator(TestSampleList, NTestSamples,
+                          cachefile="/tmp/CaloDNN-LCD-TestEvent-Cache.h5")
+
+print "Train Class Index Map:", Train_genC.ClassIndexMap
+
+if Preload:
+    print "Caching data in memory for faster processing after first epoch. Hope you have enough memory."
+    Train_gen=Train_genC.PreloadGenerator()
+    Test_gen=Test_genC.PreloadGenerator()
+elif Cache:
+    print "Caching data on disk for faster processing after first epoch. Hope you have enough disk space."
+    Train_gen=Train_genC.DiskCacheGenerator(n_threads_cache)
+    Test_gen=Test_genC.DiskCacheGenerator(n_threads_cache)
+else:
+    Train_gen=Train_genC.Generator()
+    Test_gen=Test_genC.Generator()
+
 
 # Build/Load the Model
 from DLTools.ModelWrapper import ModelWrapper
@@ -272,20 +293,11 @@ else:
 # Analysis
 if Analyze:
     print "Running Analysis."
-    if Premix:
-        Test_genC = MakePreMixGenerator(InputFile, BatchSize=BatchSize,
-                                        Skip=NSamples, Max=NTestSamples,
-                                        Norms=Norms, ECAL=ECAL,
-                                        HCAL=HCAL, n_threads=n_threads,
-                                        catchsignals=UseGracefulExit)
-    else:
-        Test_genC = MakeMixingGenerator(FileSearch, BatchSize=BatchSize,
-                                        Skip=NSamples, Max=NTestSamples,
-                                        Norms=Norms, ECAL=ECAL,
-                                        HCAL=HCAL, n_threads=n_threads,
-                                        catchsignals=UseGracefulExit)
 
-    Test_genC.PreloadData()
+    Test_genC = MakeGenerator(TestSampleList, NTestSamples,
+                              cachefile=Test_genC.cachefilename)
+
+    Test_genC.PreloadData(n_threads_cache)
     Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
 
     from DLAnalysis.Classification import MultiClassificationAnalysis

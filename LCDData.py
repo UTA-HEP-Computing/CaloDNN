@@ -122,6 +122,8 @@ def LCDDataGenerator(datasetnames,batchsize=2048,FileSearch="/data/afarbin/LCD/*
 
 def MakeMixingGenerator(FileSearch,BatchSize,Norms=[150.,1.], Max=-1, Skip=0,  ECAL=True, HCAL=True, Energy=False, **kwargs):
 
+    datasets=[]
+    
     if ECAL:
         datasets.append("ECAL")
     if HCAL:
