@@ -40,19 +40,12 @@ def TestDefaultParam(Config):
 
 TestDefaultParam=TestDefaultParam(dir())
 
-# Load the Data
-from CaloDNN.LCDData import * 
-
 # We apply a constant Normalization to the input and target data.
 # The ConstantNormalization function, which is applied during reading,
 # takes a list with the entries corresponding to the Tensors read from
 # input file. For LCD Data set the tensors are [ ECAL, HCAL, OneHot ]
 # so the normalization constant is [ ECALNorm, HCALNorm, 1. ]. 
 
-Norms=[]
-if ECAL: Norms.append(ECALNorm)
-if HCAL: Norms.append(HCALNorm)
-Norms.append(1.)
 
 # We have 3 methods of reading the LCD Data set, which comes in as a
 # large set of files separated into subdirectories corresponding to
@@ -74,48 +67,34 @@ Norms.append(1.)
 # Load the Data
 from CaloDNN.LoadData import * 
 
-datasets=[]
-shapes=[]
-
 ECALShape= None, 25, 25, 25
 HCALShape= None, 5, 5, 60
 
-if ECAL:
-    datasets.append("ECAL")
-    shapes.append((BatchSize*multiplier,)+ECALShape[1:])
-if HCAL:
-    datasets.append("HCAL")
-    shapes.append((BatchSize*multiplier,)+HCALShape[1:])
-
-shapes.append((BatchSize*multiplier, NClasses))
-
-TrainSampleList,TestSampleList=DivideFiles(FileSearch,[float(NSamples)/MaxEvents,float(NTestSamples)/MaxEvents],
-                                           datasetnames=datasets,
-                                           Particles=Particles)
-
-def MakeGenerator(SampleList,NSamples,
-                  cachefile="CaloDNN-LoadDataTest-Cache.h5",**kwargs):
-    if ECAL and HCAL:
-        post_f=MergeInputs()
-    else:
-        post_f=False
-        
-    pre_f=LCDNormalization(Norms)
-
-    return DLMultiClassGenerator(SampleList, batchsize=BatchSize, max=NSamples,
-                                 shapes=shapes,
-                                 preprocessfunction=pre_f,
-                                 postprocessfunction=post_f,
-                                 n_threads=n_threads,
-                                 multiplier=multiplier,
-                                 cachefile=cachefile,
-                                 **kwargs)
+TrainSampleList,TestSampleList,Norms,shapes=SetupData(FileSearch,
+                                                      ECAL,HCAL,False,NClasses,
+                                                      [float(NSamples)/MaxEvents,
+                                                       float(NTestSamples)/MaxEvents],
+                                                      Particles,
+                                                      BatchSize,
+                                                      multiplier,
+                                                      ECALShape,
+                                                      HCALShape,
+                                                      ECALNorm,
+                                                      HCALNorm)
 
 # Use DLGenerators to read data
-Train_genC = MakeGenerator(TrainSampleList, NSamples,
+Train_genC = MakeGenerator(ECAL,HCAL,TrainSampleList, NSamples, LCDNormalization(Norms),
+                           batchsize=BatchSize,
+                           shapes=shapes,
+                           n_threads=n_threads,
+                           multiplier=multiplier,
                            cachefile="/tmp/CaloDNN-LCD-TrainEvent-Cache.h5")
 
-Test_genC = MakeGenerator(TestSampleList, NTestSamples,
+Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, LCDNormalization(Norms),
+                          batchsize=BatchSize,
+                          shapes=shapes,
+                          n_threads=n_threads,
+                          multiplier=multiplier,
                           cachefile="/tmp/CaloDNN-LCD-TestEvent-Cache.h5")
 
 print "Train Class Index Map:", Train_genC.ClassIndexMap
@@ -294,8 +273,12 @@ else:
 if Analyze:
     print "Running Analysis."
 
-    Test_genC = MakeGenerator(TestSampleList, NTestSamples,
-                              cachefile=Test_genC.cachefilename)
+    Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, LCDNormalization(Norms),
+                          batchsize=BatchSize,
+                          shapes=shapes,
+                          n_threads=n_threads,
+                          multiplier=multiplier,
+                          cachefile=Test_genC.cachefilename)
 
     Test_genC.PreloadData(n_threads_cache)
     Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
