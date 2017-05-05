@@ -21,11 +21,12 @@ def LCDNormalization(Norms):
     def NormalizationFunction(Ds):
         out = []
         for i,Norm in enumerate(Norms):
-            if type(Norm) == float:
-                Ds[i]/=Norm
-            if type(Norm) == str and Norm.lower()=="nonlinear" :
-                Ds[i] = np.tanh(np.sign(Ds[i]) * np.log(np.abs(Ds[i]) + 1.0) / 2.0)
-            out.append(Ds[i])
+            if Norm!=0.:
+                if type(Norm) == float:
+                    Ds[i]/=Norm
+                if type(Norm) == str and Norm.lower()=="nonlinear" :
+                    Ds[i] = np.tanh(np.sign(Ds[i]) * np.log(np.abs(Ds[i]) + 1.0) / 2.0)
+                out.append(Ds[i])
         return out
     return NormalizationFunction
 
@@ -34,12 +35,12 @@ def LCDNormalization(Norms):
 def MergeAndNormInputs(NormFunc):
     def f(X):
         X=NormFunc(X)
-        return [X[0],X[1]],X[2]
+        return [X[0],X[1]],X[2:]
     return f
 
 def MergeInputs():
     def f(X):
-        return [X[0],X[1]],X[2]
+        return [X[0],X[1]],X[2:]
     return f
 
 def DivideFiles(FileSearch="/data/LCD/*/*.h5",Fractions=[.9,.1],datasetnames=["ECAL","HCAL"],Particles=[],MaxFiles=-1):
@@ -106,6 +107,7 @@ def SetupData(FileSearch,
         datasets.append("target")
         shapes.append((BatchSize*multiplier,)+(1,5))
         Norms.append(1.)
+
     # This is for the OneHot    
     shapes.append((BatchSize*multiplier, NClasses))
     Norms.append(1.)
@@ -117,8 +119,9 @@ def SetupData(FileSearch,
     return TrainSampleList,TestSampleList,Norms,shapes
 
 def MakeGenerator(ECAL,HCAL,
-                  SampleList,NSamples,NormalizationFunction,**kwargs):
-    if ECAL and HCAL:
+                  SampleList,NSamples,NormalizationFunction,
+                  Merge=True,**kwargs):
+    if ECAL and HCAL and Merge:
         post_f=MergeInputs()
     else:
         post_f=False
