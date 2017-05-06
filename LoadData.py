@@ -21,11 +21,12 @@ def LCDNormalization(Norms):
     def NormalizationFunction(Ds):
         out = []
         for i,Norm in enumerate(Norms):
-            if type(Norm) == float:
-                Ds[i]/=Norm
-            if type(Norm) == str and Norm.lower()=="nonlinear" :
-                Ds[i] = np.tanh(np.sign(Ds[i]) * np.log(np.abs(Ds[i]) + 1.0) / 2.0)
-            out.append(Ds[i])
+            if Norm!=0.:
+                if type(Norm) == float:
+                    Ds[i]/=Norm
+                if type(Norm) == str and Norm.lower()=="nonlinear" :
+                    Ds[i] = np.tanh(np.sign(Ds[i]) * np.log(np.abs(Ds[i]) + 1.0) / 2.0)
+                out.append(Ds[i])
         return out
     return NormalizationFunction
 
@@ -34,12 +35,12 @@ def LCDNormalization(Norms):
 def MergeAndNormInputs(NormFunc):
     def f(X):
         X=NormFunc(X)
-        return [X[0],X[1]],X[2]
+        return [X[0],X[1]],X[2:]
     return f
 
 def MergeInputs():
     def f(X):
-        return [X[0],X[1]],X[2]
+        return [X[0],X[1]],X[2:]
     return f
 
 def DivideFiles(FileSearch="/data/LCD/*/*.h5",Fractions=[.9,.1],datasetnames=["ECAL","HCAL"],Particles=[],MaxFiles=-1):
@@ -81,3 +82,53 @@ def DivideFiles(FileSearch="/data/LCD/*/*.h5",Fractions=[.9,.1],datasetnames=["E
 
     return out
 
+def SetupData(FileSearch,
+              ECAL,HCAL,target,
+              NClasses,f,Particles,
+              BatchSize,
+              multiplier,
+              ECALShape,
+              HCALShape,
+              ECALNorm,
+              HCALNorm):
+    datasets=[]
+    shapes=[]
+    Norms=[]
+
+    if ECAL:
+        datasets.append("ECAL")
+        shapes.append((BatchSize*multiplier,)+ECALShape[1:])
+        Norms.append(ECALNorm)
+    if HCAL:
+        datasets.append("HCAL")
+        shapes.append((BatchSize*multiplier,)+HCALShape[1:])
+        Norms.append(HCALNorm)
+    if target:
+        datasets.append("target")
+        shapes.append((BatchSize*multiplier,)+(1,5))
+        Norms.append(1.)
+
+    # This is for the OneHot    
+    shapes.append((BatchSize*multiplier, NClasses))
+    Norms.append(1.)
+
+    TrainSampleList,TestSampleList=DivideFiles(FileSearch,f,
+                                               datasetnames=datasets,
+                                               Particles=Particles)
+
+    return TrainSampleList,TestSampleList,Norms,shapes
+
+def MakeGenerator(ECAL,HCAL,
+                  SampleList,NSamples,NormalizationFunction,
+                  Merge=True,**kwargs):
+    if ECAL and HCAL and Merge:
+        post_f=MergeInputs()
+    else:
+        post_f=False
+        
+    pre_f=NormalizationFunction
+
+    return DLMultiClassGenerator(SampleList, max=NSamples,
+                                 preprocessfunction=pre_f,
+                                 postprocessfunction=post_f,
+                                 **kwargs)
