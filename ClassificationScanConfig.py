@@ -15,7 +15,7 @@ print "Found",cpu_count(),"CPUs and",gpu_count(),"GPUs. Using",n_threads,"thread
 Particles=["ChPi","Gamma","Pi0","Ele"]
 
 # Input for Mixing Generator
-FileSearch="/data/LCD/*/*.h5"
+FileSearch="/data/LCD/V1/*/*.h5"
 
 # Generation Model
 Config={
