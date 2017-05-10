@@ -12,7 +12,8 @@ max_threads=12
 n_threads=int(min(round(cpu_count()/gpu_count()),max_threads))
 print "Found",cpu_count(),"CPUs and",gpu_count(),"GPUs. Using",n_threads,"threads. max_threads =",max_threads
 
-Particles=["ChPi","Gamma","Pi0","Ele"]
+#Particles=["ChPi","Gamma","Pi0","Ele"]
+Particles=["Ele"]
 
 # Input for Mixing Generator
 FileSearch="/data/LCD/V1/*/*.h5"
