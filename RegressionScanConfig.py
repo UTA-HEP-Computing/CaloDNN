@@ -55,7 +55,8 @@ Config={
 
     # No specific reason to pick these. Needs study.
     # Note that the optimizer name should be the class name (https://keras.io/optimizers/)
-    "loss":"'categorical_crossentropy'",
+#    "loss":"'categorical_crossentropy'",
+    "loss":"'mean_squared_error'",
 
     "activation":"'relu'",
     "BatchNormLayers":True,
