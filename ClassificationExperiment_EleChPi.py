@@ -1,7 +1,7 @@
 import sys,os,argparse
 
 # Parse the Arguments
-execfile("CaloDNN/ClassificationArguments.py")
+execfile("CaloDNN/ClassificationArguments_EleChPi.py")
 
 # Process the ConfigFile
 execfile(ConfigFile)
@@ -65,7 +65,7 @@ TestDefaultParam=TestDefaultParam(dir())
 #  will be slow due to serial writing, unless it's parallelized.)
 
 # Load the Data
-from CaloDNN.LoadData import * 
+from CaloDNN.LoadData_EleChPi import * 
 
 ECALShape= None, 25, 25, 25
 HCALShape= None, 5, 5, 60
@@ -284,8 +284,11 @@ if Analyze:
     Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
 
     from DLAnalysis.Classification import MultiClassificationAnalysis
+    #result,NewMetaData=MultiClassificationAnalysis(MyModel,[Test_X_ECAL,Test_X_HCAL],Test_Y,BatchSize,PDFFileName="ROC",
+    #                                               IndexMap={0:'Pi0', 2:'ChPi', 3:'Gamma', 1:'Ele'})
+
     result,NewMetaData=MultiClassificationAnalysis(MyModel,[Test_X_ECAL,Test_X_HCAL],Test_Y,BatchSize,PDFFileName="ROC",
-                                                   IndexMap={0:'Pi0', 2:'ChPi', 3:'Gamma', 1:'Ele'})
+                                                   IndexMap={0:'ChPi', 1:'Ele'})
 
     MyModel.MetaData.update(NewMetaData)
     
