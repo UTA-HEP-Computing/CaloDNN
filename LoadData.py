@@ -56,10 +56,11 @@ def DivideFiles(FileSearch="/data/LCD/*/*.h5",Fractions=[.9,.1],datasetnames=["E
         basename=os.path.basename(F)
         ParticleName=basename.split("_")[0].replace("Escan","")
 
-        try:
-            Samples[ParticleName].append((F,datasetnames,ParticleName))
-        except:
-            Samples[ParticleName]=[(F,datasetnames,ParticleName)]
+        if ParticleName in Particles:
+            try:
+                Samples[ParticleName].append((F,datasetnames,ParticleName))
+            except:
+                Samples[ParticleName]=[(F,datasetnames,ParticleName)]
 
         if MaxFiles>0:
             if FileCount>MaxFiles:
@@ -105,7 +106,7 @@ def SetupData(FileSearch,
         Norms.append(HCALNorm)
     if target:
         datasets.append("target")
-        shapes.append((BatchSize*multiplier,)+(1,5))
+        shapes.append((BatchSize*multiplier,)+(2))
         Norms.append(1.)
 
     # This is for the OneHot    
@@ -132,3 +133,4 @@ def MakeGenerator(ECAL,HCAL,
                                  preprocessfunction=pre_f,
                                  postprocessfunction=post_f,
                                  **kwargs)
+
