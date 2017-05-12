@@ -71,7 +71,7 @@ ECALShape= None, 25, 25, 25
 HCALShape= None, 5, 5, 60
 
 TrainSampleList,TestSampleList,Norms,shapes=SetupData(FileSearch,
-                                                      ECAL,HCAL,False,NClasses,
+                                                      ECAL,HCAL,True,NClasses,
                                                       [float(NSamples)/MaxEvents,
                                                        float(NTestSamples)/MaxEvents],
                                                       Particles,
@@ -83,19 +83,21 @@ TrainSampleList,TestSampleList,Norms,shapes=SetupData(FileSearch,
                                                       HCALNorm)
 
 # Use DLGenerators to read data
-Train_genC = MakeGenerator(ECAL,HCAL,TrainSampleList, NSamples, LCDNormalization(Norms),
+Train_genC = MakeGenerator(ECAL,HCAL,TrainSampleList, NSamples, RegENormalization(Norms),
                            batchsize=BatchSize,
-                           shapes=shapes,
+#                           shapes=shapes,
                            n_threads=n_threads,
                            multiplier=multiplier,
-                           cachefile="/tmp/CaloDNN-LCD-TrainEvent-Cache.h5")
+                           OneHot=False,
+                           cachefile="/tmp/CaloDNN-LCD-TrainEvent-Cache_reece.h5")
 
-Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, LCDNormalization(Norms),
+Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, RegENormalization(Norms),
                           batchsize=BatchSize,
-                          shapes=shapes,
+#                          shapes=shapes,
                           n_threads=n_threads,
                           multiplier=multiplier,
-                          cachefile="/tmp/CaloDNN-LCD-TestEvent-Cache.h5")
+                          OneHot=False,
+                          cachefile="/tmp/CaloDNN-LCD-TestEvent-Cache_reece.h5")
 
 print "Train Class Index Map:", Train_genC.ClassIndexMap
 
@@ -167,8 +169,8 @@ if BuildModel and not MyModel.Model :
         MyModel=HCALModel
 
     if HCAL and ECAL:
-        MyModel=MergerModel(Name+"_Merged",[ECALModel,HCALModel], NClasses, WeightInitialization,
-                            OutputBase=OutputBase)
+        MyModel=MergerRegEModel(Name+"_Merged",[ECALModel,HCALModel],  WeightInitialization,
+                                OutputBase=OutputBase)
 
     # Configure the Optimizer, using optimizer configuration parameter.
     MyModel.Loss=loss
@@ -223,12 +225,10 @@ if Train or (RecoverMode and FailedLoad):
                                                        mode=TestDefaultParam("EarlyStopping_mode",'auto'),
                                                        verbose=0))
 
-
     if TestDefaultParam("RunningTime"):
         print "Setting Runningtime to",RunningTime,"."
         TSCB=TimeStopping(TestDefaultParam("RunningTime",3600*6),verbose=False)
         callbacks.append(TSCB)
-    
 
     # Don't fill the log files with progress bar.
     if sys.flags.interactive:
@@ -252,7 +252,6 @@ if Train or (RecoverMode and FailedLoad):
 
     score = MyModel.Model.evaluate_generator(Test_gen, steps=NTestSamples/BatchSize)
 
-
     print "Evaluating score on test sample..."
     print "Final Score:", score
     MyModel.MetaData["FinalScore"]=score
@@ -275,7 +274,7 @@ if Analyze:
 
     Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, LCDNormalization(Norms),
                           batchsize=BatchSize,
-                          shapes=shapes,
+#                          shapes=shapes,
                           n_threads=n_threads,
                           multiplier=multiplier,
                           cachefile=Test_genC.cachefilename)

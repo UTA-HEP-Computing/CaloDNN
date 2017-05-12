@@ -39,11 +39,11 @@ Config={
 
     # Normalization determined by hand.
     "ECAL":True,
-    "ECALNorm":"'NonLinear'",
+    "ECALNorm":1.,
 
     # Normalization needs to be determined by hand. 
     "HCAL":True,
-    "HCALNorm":"'NonLinear'",
+    "HCALNorm":1.,
 
     # Set the ECAL/HCAL Width/Depth for the Dense model.
     # Note that ECAL/HCAL Width/Depth are changed to "Width" and "Depth",
@@ -88,11 +88,13 @@ Config={
 }
 
 # Parameters to scan and their scan points.
-Params={    "optimizer":["'RMSprop'","'Adam'","'SGD'"],
+Params={   
+#    "optimizer":["'RMSprop'","'Adam'","'SGD'"],
             "Width":[32,64,128,256,512],
             "Depth":range(1,5),
-            "lr":[0.01,0.001],
-            "decay":[0.01,0.001],
+            "loss":["'mean_squared_error'", "'mean_absolute_error'"],
+#            "lr":[0.01,0.001],
+#            "decay":[0.01,0.001],
           }
 
 # Get all possible configurations.

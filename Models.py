@@ -85,3 +85,26 @@ class MergerModel(ModelWrapper):
         self.Model=Model(MInputs,modelT)
 
                 
+class MergerRegEModel(ModelWrapper):
+    def __init__(self, Name, Models, init, **kwargs):
+        super(MergerRegEModel, self).__init__(Name,**kwargs)
+        self.Models=Models
+        self.init=init
+        
+    def Build(self):
+
+        MModels=[]
+        MInputs=[]
+        for m in self.Models:
+            MModels.append(m.modelT)
+            MInputs.append(m.inputT)
+        if len(self.Models)>0:
+            print "Merged Models"
+            modelT=concatenate(MModels)#(modelT)
+            
+        modelT=Dense(1, activation='tanh',kernel_initializer=self.init)(modelT)
+        
+
+        self.modelT=modelT
+        
+        self.Model=Model(MInputs,modelT)

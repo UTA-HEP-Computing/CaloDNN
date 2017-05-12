@@ -88,14 +88,14 @@ Train_genC = MakeGenerator(ECAL,HCAL,TrainSampleList, NSamples, LCDNormalization
                            shapes=shapes,
                            n_threads=n_threads,
                            multiplier=multiplier,
-                           cachefile="/tmp/CaloDNN-LCD-TrainEvent-Cache.h5")
+                           cachefile="/tmp/CaloDNN-LCD-TrainEvent-Cache_reece.h5")
 
 Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, LCDNormalization(Norms),
                           batchsize=BatchSize,
                           shapes=shapes,
                           n_threads=n_threads,
                           multiplier=multiplier,
-                          cachefile="/tmp/CaloDNN-LCD-TestEvent-Cache.h5")
+                          cachefile="/tmp/CaloDNN-LCD-TestEvent-Cache_reece.h5")
 
 print "Train Class Index Map:", Train_genC.ClassIndexMap
 

@@ -30,6 +30,13 @@ def LCDNormalization(Norms):
         return out
     return NormalizationFunction
 
+def RegENormalization(Norms):
+    def NormalizationFunction(Ds):
+        Ds[0]=Ds[0]/Norms[0]
+        Ds[1]=Ds[1]/Norms[1]
+        Ds[2]=Ds[2][:,1]
+        return Ds
+    return NormalizationFunction
 
 # PreMix Generator.
 def MergeAndNormInputs(NormFunc):
@@ -40,7 +47,7 @@ def MergeAndNormInputs(NormFunc):
 
 def MergeInputs():
     def f(X):
-        return [X[0],X[1]],X[2:]
+        return [X[0],X[1]],X[2]
     return f
 
 def DivideFiles(FileSearch="/data/LCD/*/*.h5",Fractions=[.9,.1],datasetnames=["ECAL","HCAL"],Particles=[],MaxFiles=-1):
@@ -106,7 +113,8 @@ def SetupData(FileSearch,
         Norms.append(HCALNorm)
     if target:
         datasets.append("target")
-        shapes.append((BatchSize*multiplier,)+(2))
+#        shapes.append((BatchSize*multiplier,)+(1,5))
+        shapes.append((BatchSize*multiplier,)+(2,))
         Norms.append(1.)
 
     # This is for the OneHot    
