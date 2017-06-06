@@ -2,6 +2,7 @@ import h5py as h5
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import os
 
 ######################################################################3
 # processDataFiles(dataFiles):
@@ -18,7 +19,7 @@ def _appendData(dataFile, classID, X, y):
         if feature in features: features.remove(feature)
     for feature in features:
         newFeatureEvents = np.array(dataFile[feature]).astype(np.float)
-        if newFeatureEvents.shape[0] > 1: # change column arrays to rows
+        if len(newFeatureEvents.shape) > 1: # flatten arrays
             newFeatureEvents = newFeatureEvents.flatten()
         if feature in X.keys():
             X[feature] = np.concatenate([X[feature], newFeatureEvents])
@@ -38,13 +39,18 @@ def _splitSamples(dataX, dataY):
     return train_test_split(dataX, dataY, test_size=0.33, random_state=42)
 
 # combines files (a list of tuples with (fileName, classN)), and returns trainX, testX, trainY, testY
-def processDataFiles(dataFiles):
+def processDataFiles(dataFiles, verbosity=1):
     X = {}
     y = []
-    for dataFile in dataFiles:
+    for fileN, dataFile in enumerate(dataFiles):
         fileName = dataFile[0]
         classN = dataFile[1]
-        newSample = h5.File(fileName)
-        _appendData(newSample, classN, X, y)
+        if verbosity >= 1 and fileN%100 == 0: print "Processing file", fileN, "out of", len(dataFiles)
+        if os.path.isfile(fileName):
+            newSample = h5.File(fileName)
+            _appendData(newSample, classN, X, y)
+        else:
+            if verbosity >= 2: print fileName, "is not a valid file."
+    if verbosity >= 1: print "Final processing"
     X, y = _preprocessData(X, y)
     return _splitSamples(X, y)

@@ -2,12 +2,18 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
 
 # trains and returns a BDT
-def trainBDT(X, y):
-    dt = DecisionTreeClassifier(max_depth = 5)
+def trainBDT(X, y,
+        max_depth = 5,
+        algorithm = 'SAMME',
+        n_estimators = 800,
+        learning_rate = 0.5
+        ):
+    dt = DecisionTreeClassifier(max_depth = max_depth)
     bdt = AdaBoostClassifier(dt,
-            algorithm = 'SAMME',
-            n_estimators = 800,
-            learning_rate = 0.5)
+            algorithm = algorithm,
+            n_estimators = n_estimators,
+            learning_rate = learning_rate,
+            )
     bdt.fit(X, y)
     return bdt
 
