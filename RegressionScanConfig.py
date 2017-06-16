@@ -22,7 +22,7 @@ FileSearch="/data/LCD/V1/*/*.h5"
 Config={
     "MaxEvents":int(3.e6),
     "NTestSamples":100000,
-    "NClasses":4,
+    "NClasses": len(Particles),
 
     "Epochs":1000,
     "BatchSize":1024,

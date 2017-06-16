@@ -113,7 +113,6 @@ else:
     Train_gen=Train_genC.Generator()
     Test_gen=Test_genC.Generator()
 
-
 # Build/Load the Model
 from DLTools.ModelWrapper import ModelWrapper
 from CaloDNN.Models import *
@@ -176,7 +175,7 @@ if BuildModel and not MyModel.Model :
     MyModel.Loss=loss
     # Build it
     MyModel.Build()
-    print " Done."
+    print "  Done."
 
 if BuildModel:
     print "Output Directory:",MyModel.OutDir
@@ -265,6 +264,7 @@ if Train or (RecoverMode and FailedLoad):
 
     # Save Model
     MyModel.Save()
+
 else:
     print "Skipping Training."
     
@@ -272,19 +272,20 @@ else:
 if Analyze:
     print "Running Analysis."
 
-    Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, LCDNormalization(Norms),
+    Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, RegENormalization(Norms),
                           batchsize=BatchSize,
 #                          shapes=shapes,
                           n_threads=n_threads,
                           multiplier=multiplier,
-                          cachefile=Test_genC.cachefilename)
+                          OneHot=False,
+                          cachefile="/tmp/CaloDNN-LCD-TestEvent-Cache_reece.h5")
+
 
     Test_genC.PreloadData(n_threads_cache)
     Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
 
-    from DLAnalysis.Classification import MultiClassificationAnalysis
-    result,NewMetaData=MultiClassificationAnalysis(MyModel,[Test_X_ECAL,Test_X_HCAL],Test_Y,BatchSize,PDFFileName="ROC",
-                                                   IndexMap={0:'Pi0', 2:'ChPi', 3:'Gamma', 1:'Ele'})
+    from DLAnalysis.Regression import RegressionAnalysis
+    result,NewMetaData=RegressionAnalysis(MyModel, [Test_X_ECAL,Test_X_HCAL], Test_Y, BatchSize)
 
     MyModel.MetaData.update(NewMetaData)
     
@@ -293,7 +294,12 @@ if Analyze:
         MyModel.Save()
     else:
         print "Warning: Interactive Mode. Use MyModel.Save() to save Analysis Results."
+
+else:
+    print "Skipping Analysis."
         
+print "All done."
+
 # Make sure all of the Generators processes and threads are dead.
 # Not necessary... but ensures a graceful exit.
 # if not sys.flags.interactive:
