@@ -4,6 +4,7 @@
 from __future__ import print_function
 
 from collections import defaultdict
+
 try:
     import cPickle as pickle
 except ImportError:
@@ -11,6 +12,7 @@ except ImportError:
 
 import argparse
 import os
+
 os.environ['LD_LIBRARY_PATH'] = os.getcwd()
 from six.moves import range
 import sys
@@ -18,6 +20,7 @@ import sys
 from h5py import File as HDF5File
 import numpy as np
 from lcd_utils import lcd_3Ddata
+
 
 def bit_flip(x, prob=0.05):
     """ flips a int array's values with some probability """
@@ -27,9 +30,7 @@ def bit_flip(x, prob=0.05):
     return x
 
 
-
 if __name__ == '__main__':
-
 
     import keras.backend as K
 
@@ -42,13 +43,14 @@ if __name__ == '__main__':
     from sklearn.cross_validation import train_test_split
 
     import tensorflow as tf
-    config = tf.ConfigProto(log_device_placement=True)
-  
-    from gan3D import generator
-    from gan3D import discriminator 
 
-    g_weights = 'params_generator_epoch_' 
-    d_weights = 'params_discriminator_epoch_' 
+    config = tf.ConfigProto(log_device_placement=True)
+
+    from gan3D import generator
+    from gan3D import discriminator
+
+    g_weights = 'params_generator_epoch_'
+    d_weights = 'params_discriminator_epoch_'
 
     nb_epochs = 50
     batch_size = 100
@@ -63,7 +65,7 @@ if __name__ == '__main__':
     print('[INFO] Building discriminator')
     discriminator.summary()
     discriminator.compile(
-        #optimizer=Adam(lr=adam_lr, beta_1=adam_beta_1),
+        # optimizer=Adam(lr=adam_lr, beta_1=adam_beta_1),
         optimizer=RMSprop(),
         loss=['binary_crossentropy', 'binary_crossentropy']
     )
@@ -72,13 +74,13 @@ if __name__ == '__main__':
     print('[INFO] Building generator')
     generator.summary()
     generator.compile(
-        #optimizer=Adam(lr=adam_lr, beta_1=adam_beta_1),
+        # optimizer=Adam(lr=adam_lr, beta_1=adam_beta_1),
         optimizer=RMSprop(),
         loss='binary_crossentropy'
     )
 
-    image_class = Input(shape=(1, ), name='combined_aux', dtype='int32')
-    latent = Input(shape=(latent_size, ), name='combined_z')
+    image_class = Input(shape=(1,), name='combined_aux', dtype='int32')
+    latent = Input(shape=(latent_size,), name='combined_z')
 
     fake = generator([latent, image_class])
 
@@ -90,70 +92,72 @@ if __name__ == '__main__':
         name='combined_model'
     )
     combined.compile(
-        #optimizer=Adam(lr=adam_lr, beta_1=adam_beta_1),
+        # optimizer=Adam(lr=adam_lr, beta_1=adam_beta_1),
         optimizer=RMSprop(),
         loss=['binary_crossentropy', 'binary_crossentropy']
     )
 
+    # X, y = lcd_3Ddata()
 
+    ECALShape = None, 25, 25, 25
+    HCALShape = None, 5, 5, 60
 
-    #X, y = lcd_3Ddata()
+    FileSearch = "/data/LCD/V1/*/*.h5"
 
-    ECALShape= None, 25, 25, 25
-    HCALShape= None, 5, 5, 60
-
-    FileSearch="/data/LCD/V1/*/*.h5"
-
-    TrainSampleList,TestSampleList,Norms,shapes=SetupData(FileSearch,
-                                                          True,False,False,2,
-                                                          [.9,.1],
-                                                          ["Ele","Gamma"],
-                                                          100,
-                                                          1,
-                                                          ECALShape,
-                                                          HCALShape,
-                                                          100.,
-                                                          100.)
+    TrainSampleList, TestSampleList, Norms, shapes = SetupData(FileSearch,
+                                                               True, False,
+                                                               False, 2,
+                                                               [.9, .1],
+                                                               ["Ele", "Gamma"],
+                                                               100,
+                                                               1,
+                                                               ECALShape,
+                                                               HCALShape,
+                                                               100.,
+                                                               100.)
 
 
     def GANNormalization(Norms):
         def NormalizationFunction(Ds):
-            Ds=Ds[0]/100.
+            Ds = Ds[0] / 100.
             Ds[0] = np.expand_dims(Ds[0], axis=-1)
             return Ds
+
+
     return NormalizationFunction
 
     # Use DLGenerators to read data
-    Train_genC = MakeGenerator(True,False,TrainSampleList, 100000, GANNormalization(Norms),
+    Train_genC = MakeGenerator(True, False, TrainSampleList, 100000,
+                               GANNormalization(Norms),
                                batchsize=1000,
                                shapes=shapes,
                                n_threads=4,
                                multiplier=1
-                               cachefile="/tmp/Farbin-CaloDNN-LCD-TrainEvent-Cache.h5")
-    
-    Test_genC = MakeGenerator(True,False,TestSampleList, 10000, LCDNormalization(Norms),
-                               batchsize=1000,
-                               shapes=shapes,
-                               n_threads=4,
-                               multiplier=1
-                               cachefile="/tmp/Farbin-CaloDNN-LCD-TestEvent-Cache.h5")
+    cachefile = "/tmp/Farbin-CaloDNN-LCD-TrainEvent-Cache.h5")
 
-    
-    Train_gen=Train_genC.DiskCacheGenerator(4)
+    Test_genC = MakeGenerator(True, False, TestSampleList, 10000,
+                              LCDNormalization(Norms),
+                              batchsize=1000,
+                              shapes=shapes,
+                              n_threads=4,
+                              multiplier=1
+    cachefile = "/tmp/Farbin-CaloDNN-LCD-TestEvent-Cache.h5")
+
+
+    Train_gen = Train_genC.DiskCacheGenerator(4)
     Test_genC.Preload()
-    X_test, y_test=Test_genC.D
-    
+    X_test, y_test = Test_genC.D
+
     # remove unphysical values
-    #X[X < 1e-3] = 0
-    
+    # X[X < 1e-3] = 0
 
 
-    nb_train, nb_test = 100000,10000
+
+    nb_train, nb_test = 100000, 10000
 
     train_history = defaultdict(list)
     test_history = defaultdict(list)
 
-    
     for epoch in range(nb_epochs):
 
         print('Epoch {} of {}'.format(epoch + 1, nb_epochs))
@@ -164,16 +168,17 @@ if __name__ == '__main__':
         epoch_gen_loss = []
         epoch_disc_loss = []
 
-        index=0
-        for  image_batch, label_batch= Train_gen: # .next()   # index in range(nb_batches):
+        index = 0
+        for image_batch, label_batch= Train_gen:  # .next()   # index in range(nb_batches):
 
             if verbose:
                 progress_bar.update(index)
             else:
                 if index % 100 == 0:
-                    print('processed {}/{} batches'.format(index + 1, nb_batches))
-            index+=1
-            
+                    print(
+                        'processed {}/{} batches'.format(index + 1, nb_batches))
+            index += 1
+
             noise = np.random.normal(0, 1, (batch_size, latent_size))
 
             sampled_labels = np.random.randint(0, nb_classes, batch_size)
@@ -266,5 +271,4 @@ if __name__ == '__main__':
                                    overwrite=True)
 
         pickle.dump({'train': train_history, 'test': test_history},
-              open('dcgan-history.pkl', 'wb'))
-
+                    open('dcgan-history.pkl', 'wb'))
