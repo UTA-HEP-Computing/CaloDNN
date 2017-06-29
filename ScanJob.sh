@@ -11,7 +11,7 @@ echo Queue: $PBS_QUEUE >> $output
 cd ~/Tutorial/DLKit
 source setup.sh
 
-python -m CaloDNN.ClassificationExperiment -s $PBS_ARRAYID &>> $output
+python -m CaloDNN.ClassificationExperiment_GammaPi0 -s $PBS_ARRAYID --GracefulExit --Test &>> $output
 
 
 
