@@ -401,7 +401,9 @@ for item in TestSampleList:
 #     Test_gen = Test_genC.Generator()
 
 # ##############################################################################
-
+n_readers = 10
+q_multipler = 5
+read_multiplier = 2
 from data_provider_core.data_providers import H5FileDataProvider
 #from sample_spec import train_sample_spec, test_sample_spec
 
@@ -411,16 +413,18 @@ Train_gen = H5FileDataProvider(sample_spec_train,
                                batch_size=Config['BatchSize'],
                                process_function=LCDN(Norms),
                                delivery_function=unpack,
-                               n_readers=2,
-                               q_multipler=10,
+                               n_readers=n_readers,
+                               q_multipler=q_multipler,
+                               read_multiplier=read_multiplier,
                                wrap_examples=True)
 
 Test_gen = H5FileDataProvider(sample_spec_test,
                               batch_size=Config['BatchSize'],
                               process_function=LCDN(Norms),
                               delivery_function=unpack,
-                              n_readers=2,
-                              q_multipler=10,
+                              n_readers=n_readers,
+                              q_multipler=q_multipler,
+                              read_multiplier=read_multiplier,
                               wrap_examples=True)
 
 start_time = time()

@@ -6,6 +6,11 @@ the package is configured to work on simulated data for the LCD
 detector concept for the CLIC collider. 
 
 ## Installation
+Get Data Provider Core
+```bash
+$ git clone 
+```
+
 
 Get the packages:
 
