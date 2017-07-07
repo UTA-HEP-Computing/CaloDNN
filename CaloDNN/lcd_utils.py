@@ -22,7 +22,6 @@ def LCDN(Norms):
     def NormalizationFunction(Ds):
         # converting the data from an ordered-dictionary format to a list
         Ds = [Ds[item] for item in Ds]
-        print('Ds_len', len(Ds))
         out = []
         # print('DS', Ds)
         # TODO replace with zip function
@@ -37,3 +36,7 @@ def LCDN(Norms):
         return out
 
     return NormalizationFunction
+
+def unpack(thing):
+    #print('thing', '([{0}, {1}], {2})'.format(thing[0].shape, thing[1].shape, thing[2].shape)) 
+    return (thing[:2], thing[2])

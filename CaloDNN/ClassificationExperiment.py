@@ -13,7 +13,7 @@ from keras.callbacks import *
 from CaloDNN.LoadData import *
 from CaloDNN.Models import *
 
-lg.basicConfig(level=lg.DEBUG)
+lg.basicConfig(level=lg.WARNING)
 
 # Configuration of this jobConfig
 parser = argparse.ArgumentParser()
@@ -68,7 +68,7 @@ TestMode = args.Test
 RecoverMode = args.Recover
 UseGPU = not args.cpu
 gpuid = args.gpuid
-
+verbose=1
 if args.hyperparamset:
     HyperParamSet = int(args.hyperparamset)
 
@@ -140,7 +140,7 @@ FileSearch = "/data/LCD/V1/*/*.h5"
 Config = {
     "MaxEvents": int(3.e6),
     "NTestSamples": 100000,
-    "NClasses": 4,
+    "NClasses": 2,
 
     "Epochs": 1000,
     "BatchSize": 1024,
@@ -153,7 +153,7 @@ Config = {
     "multiplier": 1,  # Read N batches worth of data in each worker
 
     # How weights are initialized
-    "WeightInitialization": "'normal'",
+    "WeightInitialization": 'random_normal',
 
     # Normalization determined by hand.
     "ECAL": True,
@@ -173,7 +173,7 @@ Config = {
 
     # No specific reason to pick these. Needs study.
     # Note that the optimizer name should be the class name (https://keras.io/optimizers/)
-    "loss": "'categorical_crossentropy'",
+    "loss": 'categorical_crossentropy',
 
     "activation": "'relu'",
     "BatchNormLayers": True,
@@ -182,7 +182,7 @@ Config = {
     # Specify the optimizer class name as True (see: https://keras.io/optimizers/)
     # and parameters (using constructor keywords as parameter name).
     # Note if parameter is not specified, default values are used.
-    "optimizer": "'RMSprop'",
+    "optimizer": 'rmsprop',
     "lr": 0.01,
     "decay": 0.001,
 
@@ -205,7 +205,7 @@ Config = {
 }
 
 # Parameters to scan and their scan points.
-Params = {"optimizer": ["'RMSprop'", "'Adam'", "'SGD'"],
+Params = {"optimizer": ['RMSprop', 'Adam', 'SGD'],
           "Width": [32, 64, 128, 256, 512],
           "Depth": range(1, 5),
           "lr": [0.01, 0.001],
@@ -275,8 +275,7 @@ if TestMode:
     OutputBase += ".Test"
     print ("Test Mode: Set MaxEvents to ",
            Config['MaxEvents'],
-           " and Epochs "
-           "to ",
+           " and Epochs to ",
            Config['Epochs'])
 
 if LowMemMode:
@@ -355,12 +354,15 @@ TrainSampleList, TestSampleList, Norms, shapes = SetupData(FileSearch,
                                                            Config['ECALNorm'],
                                                            Config['HCALNorm'])
 
-out = list()
+sample_spec_train = list()
 for item in TrainSampleList:
-    out.append(TrainSampleList[:3], TrainSampleList[3] + 'target', TrainSampleList[4:])
+    sample_spec_train.append((item[0], item[1] + ['target'], item[2], 1))
 
-print('out', out)
-print('Norms', Norms)
+
+sample_spec_test = list()
+for item in TestSampleList:
+    sample_spec_test.append((item[0], item[1] + ['target'], item[2], 1))
+
 
 # ##############################################################################
 # print('TrainSampleList', TrainSampleList)
@@ -401,20 +403,22 @@ print('Norms', Norms)
 # ##############################################################################
 
 from data_provider_core.data_providers import H5FileDataProvider
-from sample_spec import train_sample_spec, test_sample_spec
+#from sample_spec import train_sample_spec, test_sample_spec
 
-from .lcd_utils import LCDN
+from .lcd_utils import LCDN, unpack
 
-Train_gen = H5FileDataProvider(train_sample_spec,
+Train_gen = H5FileDataProvider(sample_spec_train,
                                batch_size=Config['BatchSize'],
                                process_function=LCDN(Norms),
+                               delivery_function=unpack,
                                n_readers=2,
                                q_multipler=10,
                                wrap_examples=True)
 
-Test_gen = H5FileDataProvider(test_sample_spec,
+Test_gen = H5FileDataProvider(sample_spec_test,
                               batch_size=Config['BatchSize'],
                               process_function=LCDN(Norms),
+                              delivery_function=unpack,
                               n_readers=2,
                               q_multipler=10,
                               wrap_examples=True)
@@ -470,7 +474,7 @@ if BuildModel and not MyModel:
                                                Config['NClasses'],
                                                init=TestDefaultParam(
                                                    "WeightInitialization",
-                                                   'normal'),
+                                                   'random_normal'),
                                                activation=TestDefaultParam(
                                                    "activation", "relu"),
                                                Dropout=TestDefaultParam(
@@ -494,7 +498,7 @@ if BuildModel and not MyModel:
                                                Config['NClasses'],
                                                init=TestDefaultParam(
                                                    "WeightInitialization",
-                                                   'normal'),
+                                                   'random_normal'),
                                                activation=TestDefaultParam(
                                                    "activation", "relu"),
                                                Dropout=TestDefaultParam(
@@ -511,7 +515,7 @@ if BuildModel and not MyModel:
                               [ECALModel, HCALModel],
                               Config['NClasses'],
                               Config['WeightInitialization'],
-                              OutputBase=Config['OutputBase'])
+                              OutputBase=OutputBase)
 
     # Configure the Optimizer, using optimizer configuration parameter.
     MyModel.Loss = Config['loss']
@@ -579,13 +583,15 @@ if Train or (RecoverMode and FailedLoad):
         callbacks.append(TSCB)
 
     # Don't fill the log files with progress bar.
-    if sys.flags.interactive:
-        verbose = 1
-    else:
-        verbose = 1  # Set to 2
+#    if sys.flags.interactive:
+#        verbose = 1
+#    else:
+#        verbose = 1  # set to 2
 
     print "Evaluating score on test sample..."
-    score = MyModel.Model.evaluate_generator(Test_gen,
+    tmp = Test_gen.first().generate().next()
+    #print('WAT', type(tmp), tmp[0].shape, tmp[1].shape, tmp[2].shape)
+    score = MyModel.Model.evaluate_generator(Test_gen.first().generate(),
                                              steps=Config['NTestSamples'] /
                                                    Config['BatchSize'])
 
@@ -599,7 +605,7 @@ if Train or (RecoverMode and FailedLoad):
                                                   ),
                                                   epochs=Config['Epochs'],
                                                   verbose=verbose,
-                                                  validation_data=Test_gen,
+                                                  validation_data=Test_gen.first().generate(),
                                                   validation_steps=Config[
                                                                        'NTestSamples']
                                                                    / Config[
