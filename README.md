@@ -8,7 +8,9 @@ detector concept for the CLIC collider.
 ## Installation
 Get Data Provider Core
 ```bash
-$ git clone 
+$ git clone https://gitlab.anomalousdl.com/open-source/data_provider_core
+$ cd ./data_provider_core
+$ pip install -e .
 ```
 
 
