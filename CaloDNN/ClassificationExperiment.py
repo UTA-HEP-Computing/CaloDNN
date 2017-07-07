@@ -4,12 +4,16 @@
 # Arg parsing
 # ##############################################################################
 import argparse
+import logging as lg
 
-from DLKit.DLTools import ModelWrapper
-from DLKit.DLTools import Permutator
+from DLKit.DLTools.CallBacks import GracefulExit, TimeStopping
+from DLKit.DLTools.Permutator import Permutator
+from keras.callbacks import *
 
 from CaloDNN.LoadData import *
 from CaloDNN.Models import *
+
+lg.basicConfig(level=lg.DEBUG)
 
 # Configuration of this jobConfig
 parser = argparse.ArgumentParser()
@@ -326,11 +330,13 @@ TestDefaultParam = TestDefaultParam(dir())
 
 ECALShape = None, 25, 25, 25
 HCALShape = None, 5, 5, 60
+ECAL = Config['ECAL']
+HCAL = Config['HCAL']
 
 # Too many parameters, should be decomposed or use an object
 TrainSampleList, TestSampleList, Norms, shapes = SetupData(FileSearch,
                                                            Config['ECAL'],
-                                                           Config['HCAL'],
+                                                           HCAL,
                                                            False,
                                                            Config['NClasses'],
                                                            [float(
@@ -349,9 +355,16 @@ TrainSampleList, TestSampleList, Norms, shapes = SetupData(FileSearch,
                                                            Config['ECALNorm'],
                                                            Config['HCALNorm'])
 
+out = list()
+for item in TrainSampleList:
+    out.append(TrainSampleList[:3], TrainSampleList[3] + 'target', TrainSampleList[4:])
+
+print('out', out)
+print('Norms', Norms)
+
 # ##############################################################################
-print('TrainSampleList', TrainSampleList)
-print('TestSampleList', TestSampleList)
+# print('TrainSampleList', TrainSampleList)
+# print('TestSampleList', TestSampleList)
 
 # ##############################################################################
 # # Use DLGenerators to read data
@@ -387,15 +400,43 @@ print('TestSampleList', TestSampleList)
 
 # ##############################################################################
 
+from data_provider_core.data_providers import H5FileDataProvider
+from sample_spec import train_sample_spec, test_sample_spec
+
+from .lcd_utils import LCDN
+
+Train_gen = H5FileDataProvider(train_sample_spec,
+                               batch_size=Config['BatchSize'],
+                               process_function=LCDN(Norms),
+                               n_readers=2,
+                               q_multipler=10,
+                               wrap_examples=True)
+
+Test_gen = H5FileDataProvider(test_sample_spec,
+                              batch_size=Config['BatchSize'],
+                              process_function=LCDN(Norms),
+                              n_readers=2,
+                              q_multipler=10,
+                              wrap_examples=True)
+
+start_time = time()
+lg.debug("starting generators")
+Train_gen.start()
+Test_gen.start()
+lg.debug("start successful")
+lg.info("generator_spin_up={0}".format(time() - start_time))
 
 # Build/Load the Model
 
+# ############
+# Cleanup Instantiations
+MyModel = None
 
 # You can automatically load the latest previous training of this model.
 if TestDefaultParam("LoadPreviousModel") and not LoadModel and BuildModel:
     print "Looking for Previous Model to load."
     ModelName = Name
-    if Config['ECAL'] and Config['HCAL']:
+    if ECAL and HCAL:
         ModelName += "_Merged"
     MyModel = ModelWrapper(Name=ModelName, LoadPrevious=True,
                            OutputBase=OutputBase)
@@ -409,21 +450,24 @@ if LoadModel and BuildModel:
                            OutputBase=OutputBase)
     MyModel.Load(LoadModel)
 
-if BuildModel and not MyModel.Model:
+if BuildModel and not MyModel:
     FailedLoad = True
 else:
     FailedLoad = False
 
 # Or Build the model from scratch
-if BuildModel and not MyModel.Model:
+if BuildModel and not MyModel:
     import keras
 
     print "Building Model...",
 
     if ECAL:
-        ECALModel = Fully3DImageClassification(Name + "ECAL", ECALShape,
-                                               ECALWidth, ECALDepth,
-                                               BatchSize, NClasses,
+        ECALModel = Fully3DImageClassification(Name + "ECAL",
+                                               ECALShape,
+                                               Config['ECALWidth'],
+                                               Config['ECALDepth'],
+                                               Config['BatchSize'],
+                                               Config['NClasses'],
                                                init=TestDefaultParam(
                                                    "WeightInitialization",
                                                    'normal'),
@@ -433,15 +477,21 @@ if BuildModel and not MyModel.Model:
                                                    "DropoutLayers", 0.5),
                                                BatchNormalization=TestDefaultParam(
                                                    "BatchNormLayers", False),
-                                               NoClassificationLayer=ECAL and HCAL,
+                                               NoClassificationLayer=Config[
+                                                                         'ECAL'] and
+                                                                     Config[
+                                                                         'HCAL'],
                                                OutputBase=OutputBase)
         ECALModel.Build()
         MyModel = ECALModel
 
     if HCAL:
-        HCALModel = Fully3DImageClassification(Name + "HCAL", HCALShape,
-                                               ECALWidth, HCALDepth,
-                                               BatchSize, NClasses,
+        HCALModel = Fully3DImageClassification(Name + "HCAL",
+                                               HCALShape,
+                                               Config['ECALWidth'],
+                                               Config['HCALDepth'],
+                                               Config['BatchSize'],
+                                               Config['NClasses'],
                                                init=TestDefaultParam(
                                                    "WeightInitialization",
                                                    'normal'),
@@ -457,12 +507,14 @@ if BuildModel and not MyModel.Model:
         MyModel = HCALModel
 
     if HCAL and ECAL:
-        MyModel = MergerModel(Name + "_Merged", [ECALModel, HCALModel],
-                              NClasses, WeightInitialization,
-                              OutputBase=OutputBase)
+        MyModel = MergerModel(Name + "_Merged",
+                              [ECALModel, HCALModel],
+                              Config['NClasses'],
+                              Config['WeightInitialization'],
+                              OutputBase=Config['OutputBase'])
 
     # Configure the Optimizer, using optimizer configuration parameter.
-    MyModel.Loss = loss
+    MyModel.Loss = Config['loss']
     # Build it
     MyModel.Build()
     print " Done."
@@ -479,7 +531,7 @@ if BuildModel:
 
     # Compile The Model
     print "Compiling Model."
-    MyModel.BuildOptimizer(optimizer, Config)
+    MyModel.BuildOptimizer(Config['optimizer'], Config)
     MyModel.Compile(Metrics=["accuracy"])
 
 # Train
@@ -487,8 +539,7 @@ if Train or (RecoverMode and FailedLoad):
     print "Training."
     # Setup Callbacks
     # These are all optional.
-    from DLTools.CallBacks import TimeStopping, GracefulExit
-    from keras.callbacks import *
+
 
     callbacks = []
 
@@ -535,22 +586,29 @@ if Train or (RecoverMode and FailedLoad):
 
     print "Evaluating score on test sample..."
     score = MyModel.Model.evaluate_generator(Test_gen,
-                                             steps=NTestSamples / BatchSize)
+                                             steps=Config['NTestSamples'] /
+                                                   Config['BatchSize'])
 
     print "Initial Score:", score
     MyModel.MetaData["InitialScore"] = score
 
-    MyModel.History = MyModel.Model.fit_generator(Train_gen,
+    MyModel.History = MyModel.Model.fit_generator(Train_gen.first().generate(),
                                                   steps_per_epoch=(
-                                                      NSamples / BatchSize),
-                                                  epochs=Epochs,
+                                                      NSamples / Config[
+                                                          'BatchSize']
+                                                  ),
+                                                  epochs=Config['Epochs'],
                                                   verbose=verbose,
                                                   validation_data=Test_gen,
-                                                  validation_steps=NTestSamples / BatchSize,
+                                                  validation_steps=Config[
+                                                                       'NTestSamples']
+                                                                   / Config[
+                                                                       'BatchSize'],
                                                   callbacks=callbacks)
 
-    score = MyModel.Model.evaluate_generator(Test_gen,
-                                             steps=NTestSamples / BatchSize)
+    score = MyModel.Model.evaluate_generator(Test_gen.first().generate(),
+                                             steps=Config['NTestSamples'] /
+                                                   Config['BatchSize'])
 
     print "Evaluating score on test sample..."
     print "Final Score:", score
@@ -569,38 +627,47 @@ else:
     print "Skipping Training."
 
 # Analysis
-if Analyze:
-    print "Running Analysis."
+# if Analyze:
+# print "Running Analysis."
 
-    Test_genC = MakeGenerator(ECAL, HCAL, TestSampleList, NTestSamples,
-                              LCDNormalization(Norms),
-                              batchsize=BatchSize,
-                              shapes=shapes,
-                              n_threads=n_threads,
-                              multiplier=multiplier,
-                              cachefile=Test_genC.cachefilename)
+# Test_genC = MakeGenerator(ECAL, HCAL, TestSampleList, Config['NTestSamples,
+#                           LCDNormalization(Norms),
+#                           batchsize=BatchSize,
+#                           shapes=shapes,
+#                           n_threads=n_threads,
+#                           multiplier=multiplier,
+#                           cachefile=Test_genC.cachefilename)
 
-    Test_genC.PreloadData(n_threads_cache)
-    Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
+# Test_genC.PreloadData(n_threads_cache)
 
-    from DLAnalysis.Classification import MultiClassificationAnalysis
+# TODO what are the following data structures?
+# Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
 
-    result, NewMetaData = MultiClassificationAnalysis(MyModel, [Test_X_ECAL,
-                                                                Test_X_HCAL],
-                                                      Test_Y, BatchSize,
-                                                      PDFFileName="ROC",
-                                                      IndexMap={0: 'Pi0',
-                                                                2: 'ChPi',
-                                                                3: 'Gamma',
-                                                                1: 'Ele'})
-
-    MyModel.MetaData.update(NewMetaData)
-
-    # Save again, in case Analysis put anything into the Model MetaData
-    if not sys.flags.interactive:
-        MyModel.Save()
-    else:
-        print "Warning: Interactive Mode. Use MyModel.Save() to save Analysis Results."
+# analysis_gen = H5FileDataProvider(test_sample_spec,
+#                                   batch_size=Config['BatchSize'],
+#                                   process_function=LCDN(Norms),
+#                                   n_readers=2,
+#                                   q_multipler=10,
+#                                   wrap_examples=True)
+#
+# result, NewMetaData = MultiClassificationAnalysis(MyModel,
+#                                                   [Test_X_ECAL,
+#                                                    Test_X_HCAL],
+#                                                   Test_Y,
+#                                                   Config['BatchSize'],
+#                                                   PDFFileName="ROC",
+#                                                   IndexMap={0: 'Pi0',
+#                                                             2: 'ChPi',
+#                                                             3: 'Gamma',
+#                                                             1: 'Ele'})
+#
+# MyModel.MetaData.update(NewMetaData)
+#
+# # Save again, in case Analysis put anything into the Model MetaData
+# if not sys.flags.interactive:
+#     MyModel.Save()
+# else:
+#     print "Warning: Interactive Mode. Use MyModel.Save() to save Analysis Results."
 
 # Make sure all of the Generators processes and threads are dead.
 # Not necessary... but ensures a graceful exit.
