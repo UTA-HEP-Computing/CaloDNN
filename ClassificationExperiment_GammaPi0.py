@@ -14,9 +14,9 @@ if "Config" in dir():
 # Use "--Test" to run on less events and epochs.
 OutputBase="TrainedModels"
 if TestMode:
-    MaxEvents=int(10e3)
-    NTestSamples=int(10e2)
-    Epochs=10
+    MaxEvents=int(60e4)
+    NTestSamples=int(60e3)
+    Epochs=100
     OutputBase+=".Test"
     print "Test Mode: Set MaxEvents to",MaxEvents,"and Epochs to", Epochs
 
@@ -90,14 +90,14 @@ Train_genC = MakeGenerator(ECAL,HCAL,TrainSampleList, NSamples, LCDNormalization
                            shapes=shapes,
                            n_threads=n_threads,
                            multiplier=multiplier,
-                           cachefile="/tmp/wei-CaloDNN-LCD-TrainEvent-Cache.h5")
+                           cachefile="/tmp/wwei-CaloDNN-LCD-TrainEvent-Cache.h5")
 
 Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, LCDNormalization(Norms),
                           batchsize=BatchSize,
                           shapes=shapes,
                           n_threads=n_threads,
                           multiplier=multiplier,
-                          cachefile="/tmp/wei-CaloDNN-LCD-TestEvent-Cache.h5")
+                          cachefile="/tmp/wwei-CaloDNN-LCD-TestEvent-Cache.h5")
 
 print "Train Class Index Map:", Train_genC.ClassIndexMap
 
@@ -242,6 +242,8 @@ if Train or (RecoverMode and FailedLoad):
         callbacks.append(TSCB)
     
 
+    #callbacks.append(keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=0, write_graph=True, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None))
+
     # Don't fill the log files with progress bar.
     if sys.flags.interactive:
         verbose=1
@@ -253,7 +255,7 @@ if Train or (RecoverMode and FailedLoad):
     
     print "Initial Score:", score
     MyModel.MetaData["InitialScore"]=score
-        
+    #import pdb; pdb.set_trace()    
     MyModel.History = MyModel.Model.fit_generator(Train_gen,
                                                   steps_per_epoch=(NSamples/BatchSize),
                                                   epochs=Epochs,
@@ -295,7 +297,7 @@ if Analyze:
     Test_genC.PreloadData(n_threads_cache)
 
     Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
-    #import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
     from DLAnalysis.Classification import MultiClassificationAnalysis
     #result,NewMetaData=MultiClassificationAnalysis(MyModel,[Test_X_ECAL,Test_X_HCAL],Test_Y,BatchSize,PDFFileName="ROC",
     #                                               IndexMap={0:'Pi0', 2:'ChPi', 3:'Gamma', 1:'Ele'})

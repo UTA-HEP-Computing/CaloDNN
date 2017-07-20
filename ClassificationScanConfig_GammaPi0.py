@@ -20,11 +20,11 @@ FileSearch="/data/LCD/V2/MLDataset/*/*.h5"
 
 # Generation Model
 Config={
-    "MaxEvents":int(1.e5),
-    "NTestSamples":10000,
+    "MaxEvents":200000,
+    "NTestSamples":20000,
     "NClasses":len(Particles),
 
-    "Epochs":100,
+    "Epochs":20,
     "BatchSize":1024,
 
     # Configures the parallel data generator that read the input.
