@@ -10,7 +10,7 @@ sys.dont_write_bytecode = True
 #####################
 
 import sys,os,argparse
-execfile("CaloDNN/ClassificationArguments.py")
+execfile("CaloDNN/NeuralNets/ClassificationArguments.py")
 execfile(ConfigFile) # ConfigFile passed with -C flag (see ClassificationArguments.py)
 
 ###################
@@ -32,7 +32,7 @@ if LowMemMode: # "--LowMem"
 # Load Data Structures #
 ########################
 
-from CaloDNN.LoadData import * 
+from CaloDNN.NeuralNets.LoadData import * 
 
 NSamples = MaxEvents - NTestSamples # Calculate how many events will be used for training/validation.
 # using options set in ConfigFile, set up the data structures
@@ -101,7 +101,7 @@ else:
 #######################
 
 from DLTools.ModelWrapper import ModelWrapper
-from CaloDNN.Models import *
+from CaloDNN.NeuralNets.Models import *
 
 # You can automatically load the latest previous training of this model.
 if TestDefaultParam("LoadPreviousModel") and not LoadModel and BuildModel:

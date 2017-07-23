@@ -171,7 +171,7 @@ else:
 # Create Model #
 ################
 
-from CaloDNN.Models import *
+from CaloDNN.NeuralNets.Models import *
 OutputBase="TrainedModels" # Save folder
 
 if ECAL:

@@ -33,7 +33,7 @@ n_threads=int(min(round(cpu_count()/gpu_count()),max_threads))
 print "Found",cpu_count(),"CPUs and",gpu_count(),"GPUs. Using",n_threads,"threads. max_threads =",max_threads
 
 # Particle types
-Particles=["ChPi","Ele"]
+Particles=["Pi0","Gamma"]
 
 # ECAL shapes (add dimensions for conv net)
 ECALShape= None, 25, 25, 25, 1
@@ -171,7 +171,7 @@ else:
 # Create Model #
 ################
 
-from CaloDNN.Models import *
+from CaloDNN.NeuralNets.Models import *
 OutputBase="TrainedModels" # Save folder
 
 if ECAL:
