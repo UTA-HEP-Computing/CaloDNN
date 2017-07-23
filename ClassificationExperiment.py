@@ -3,7 +3,6 @@
 ##########################
 
 import sys
-
 sys.dont_write_bytecode = True
 
 #####################
@@ -11,7 +10,6 @@ sys.dont_write_bytecode = True
 #####################
 
 import sys,os,argparse
-
 execfile("CaloDNN/ClassificationArguments.py")
 execfile(ConfigFile) # ConfigFile passed with -C flag (see ClassificationArguments.py)
 
@@ -131,7 +129,6 @@ if BuildModel and not MyModel.Model :
     import keras
     print "Building Model...",
     MyModel = ConfigModel
-    MyModel.Loss=loss # Configure the Optimizer, using optimizer configuration parameter.
     MyModel.Build() # Build it
     print " Done."
 
