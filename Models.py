@@ -4,6 +4,8 @@ from keras.layers.merge import concatenate
 from keras.models import Sequential, Model
 from keras.layers.core import Dense, Activation
 from keras.layers import  BatchNormalization,Dropout,Flatten, Input
+from keras.layers.convolutional import Conv3D
+from keras.layers.pooling import AveragePooling3D
 from keras.models import model_from_json
 
 class Convolutional3D(ModelWrapper):

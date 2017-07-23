@@ -1,7 +1,7 @@
 # Configuration of this jobConfig
 parser = argparse.ArgumentParser()
 # Start by creating a new config file and changing the line below
-parser.add_argument('-C', '--config',default="CaloDNN/ClassificationScanConfig.py", help="Use specified configuration file.")
+parser.add_argument('-C', '--config',default="CaloDNN/ScanConfigs/ClassificationScanConfig.py", help="Use specified configuration file.")
 
 parser.add_argument('-L', '--LoadModel',help='Loads a model from specified directory.', default=False)
 parser.add_argument('--gpu', dest='gpuid', default="", help='Use specified GPU.')

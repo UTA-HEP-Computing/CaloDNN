@@ -1,75 +1,43 @@
+##########################
+# Don't Write .pyc Files #
+##########################
+
+import sys
+
+sys.dont_write_bytecode = True
+
+#####################
+# Read in Arguments #
+#####################
+
 import sys,os,argparse
 
-# Parse the Arguments
 execfile("CaloDNN/ClassificationArguments.py")
+execfile(ConfigFile) # ConfigFile passed with -C flag (see ClassificationArguments.py)
 
-# Process the ConfigFile
-execfile(ConfigFile)
+###################
+# Parse Arguments #
+###################
 
-# Now put config in the current scope. Must find a prettier way.
-if "Config" in dir():
-    for a in Config:
-        exec(a+"="+str(Config[a]))
-
-# Use "--Test" to run on less events and epochs.
-OutputBase="TrainedModels"
-if TestMode:
+if TestMode: # Use "--Test" to run on less events and epochs. Overwrites some options from ConfigFile
     MaxEvents=int(20e3)
     NTestSamples=int(20e2)
     Epochs=10
     OutputBase+=".Test"
     print "Test Mode: Set MaxEvents to",MaxEvents,"and Epochs to", Epochs
 
-if LowMemMode:
+if LowMemMode: # "--LowMem"
     n_threads=1
     multiplier=1
-    
-# Calculate how many events will be used for training/validation.
-NSamples=MaxEvents-NTestSamples
 
-    
-# Function to help manage optional configurations. Checks and returns
-# if an object is in current scope. Return default value if not.
-def TestDefaultParam(Config):
-    def TestParamPrime(param,default=False):
-        if param in Config:
-            return eval(param)
-        else:
-            return default
-    return TestParamPrime
+########################
+# Load Data Structures #
+########################
 
-TestDefaultParam=TestDefaultParam(dir())
-
-# We apply a constant Normalization to the input and target data.
-# The ConstantNormalization function, which is applied during reading,
-# takes a list with the entries corresponding to the Tensors read from
-# input file. For LCD Data set the tensors are [ ECAL, HCAL, OneHot ]
-# so the normalization constant is [ ECALNorm, HCALNorm, 1. ]. 
-
-
-# We have 3 methods of reading the LCD Data set, which comes in as a
-# large set of files separated into subdirectories corresponding to
-# particle type. For training, this data needs to be mixed and
-# "OneHot" labels created. Everything uses the ThreadedGenerator from
-# DLTools.
-#
-# Methods (from slow to fast):
-# 1. Read and mix the files on fly. (--nopremix)
-# 2. Premix the files into single input file using LCDData.py. 
-# read the large file on the fly. (default)
-# 3. Load the data into memory, so Epochs>1 are significantly
-# accelerated. Uses a lot of memory. Works either 1 or 2 
-# above. (--preload)
-
-# (Note 1 and 2 can be made automatic with a bit of effort, but
-#  will be slow due to serial writing, unless it's parallelized.)
-
-# Load the Data
 from CaloDNN.LoadData import * 
 
-ECALShape= None, 25, 25, 25
-HCALShape= None, 5, 5, 60
-
+NSamples = MaxEvents - NTestSamples # Calculate how many events will be used for training/validation.
+# using options set in ConfigFile, set up the data structures
 TrainSampleList,TestSampleList,Norms,shapes=SetupData(FileSearch,
                                                       ECAL,HCAL,False,NClasses,
                                                       [float(NSamples)/MaxEvents,
@@ -82,7 +50,26 @@ TrainSampleList,TestSampleList,Norms,shapes=SetupData(FileSearch,
                                                       ECALNorm,
                                                       HCALNorm)
 
+#####################
+# Set Up Generators #
+#####################
+
 # Use DLGenerators to read data
+#
+# We apply a constant Normalization to the input and target data. The ConstantNormalization function, which is applied during reading,
+# takes a list with the entries corresponding to the Tensors read from input file. For LCD Data set the tensors are [ ECAL, HCAL, OneHot ]
+# so the normalization constant is [ ECALNorm, HCALNorm, 1. ]. 
+
+# We have 3 methods of reading the LCD Data set, which comes in as a large set of files separated into subdirectories corresponding to
+# particle type. For training, this data needs to be mixed and "OneHot" labels created. Everything uses the ThreadedGenerator from
+# DLTools.
+#
+# Methods (from slow to fast):
+# 1. Read and mix the files on fly. (--nopremix)
+# 2. Premix the files into single input file using LCDData.py, then read the large file on the fly. (default)
+# 3. Load the data into memory, so Epochs>1 are significantly accelerated. Uses a lot of memory. Works either 1 or 2 
+# above. (--preload)
+# (Note 1 and 2 can be made automatic with a bit of effort, but will be slow due to serial writing, unless it's parallelized.)
 Train_genC = MakeGenerator(ECAL,HCAL,TrainSampleList, NSamples, LCDNormalization(Norms),
                            batchsize=BatchSize,
                            shapes=shapes,
@@ -111,8 +98,10 @@ else:
     Train_gen=Train_genC.Generator()
     Test_gen=Test_genC.Generator()
 
+#######################
+# Build or Load Model #
+#######################
 
-# Build/Load the Model
 from DLTools.ModelWrapper import ModelWrapper
 from CaloDNN.Models import *
 
@@ -141,39 +130,9 @@ else:
 if BuildModel and not MyModel.Model :
     import keras
     print "Building Model...",
-
-    if ECAL:
-        ECALModel=Fully3DImageClassification(Name+"ECAL", ECALShape, ECALWidth, ECALDepth,
-                                             BatchSize, NClasses,
-                                             init=TestDefaultParam("WeightInitialization",'normal'),
-                                             activation=TestDefaultParam("activation","relu"),
-                                             Dropout=TestDefaultParam("DropoutLayers",0.5),
-                                             BatchNormalization=TestDefaultParam("BatchNormLayers",False),
-                                             NoClassificationLayer=ECAL and HCAL,
-                                             OutputBase=OutputBase)
-        ECALModel.Build()
-        MyModel=ECALModel
-
-    if HCAL:
-        HCALModel=Fully3DImageClassification(Name+"HCAL", HCALShape, ECALWidth, HCALDepth,
-                                             BatchSize, NClasses,
-                                             init=TestDefaultParam("WeightInitialization",'normal'),
-                                             activation=TestDefaultParam("activation","relu"),
-                                             Dropout=TestDefaultParam("DropoutLayers",0.5),
-                                             BatchNormalization=TestDefaultParam("BatchNormLayers",False),
-                                             NoClassificationLayer=ECAL and HCAL,
-                                             OutputBase=OutputBase)
-        HCALModel.Build()
-        MyModel=HCALModel
-
-    if HCAL and ECAL:
-        MyModel=MergerModel(Name+"_Merged",[ECALModel,HCALModel], NClasses, WeightInitialization,
-                            OutputBase=OutputBase)
-
-    # Configure the Optimizer, using optimizer configuration parameter.
-    MyModel.Loss=loss
-    # Build it
-    MyModel.Build()
+    MyModel = ConfigModel
+    MyModel.Loss=loss # Configure the Optimizer, using optimizer configuration parameter.
+    MyModel.Build() # Build it
     print " Done."
 
 if BuildModel:
@@ -191,7 +150,10 @@ if BuildModel:
     MyModel.BuildOptimizer(optimizer,Config)
     MyModel.Compile(Metrics=["accuracy"]) 
 
-# Train
+####################
+# Perform Training #
+####################
+
 if Train or (RecoverMode and FailedLoad):
     print "Training."
     # Setup Callbacks
@@ -223,13 +185,11 @@ if Train or (RecoverMode and FailedLoad):
                                                        mode=TestDefaultParam("EarlyStopping_mode",'auto'),
                                                        verbose=0))
 
-
     if TestDefaultParam("RunningTime"):
         print "Setting Runningtime to",RunningTime,"."
         TSCB=TimeStopping(TestDefaultParam("RunningTime",3600*6),verbose=False)
         callbacks.append(TSCB)
     
-
     # Don't fill the log files with progress bar.
     if sys.flags.interactive:
         verbose=1
@@ -266,10 +226,14 @@ if Train or (RecoverMode and FailedLoad):
 
     # Save Model
     MyModel.Save()
+
 else:
     print "Skipping Training."
     
-# Analysis
+###################
+# Analyze Results #
+###################
+
 if Analyze:
     print "Running Analysis."
 
@@ -294,9 +258,12 @@ if Analyze:
         MyModel.Save()
     else:
         print "Warning: Interactive Mode. Use MyModel.Save() to save Analysis Results."
+    
+################
+# Exit Program #
+################
         
-# Make sure all of the Generators processes and threads are dead.
-# Not necessary... but ensures a graceful exit.
+## Make sure all of the Generators processes and threads are dead. Not necessary... but ensures a graceful exit.
 # if not sys.flags.interactive:
 #     for g in GeneratorClasses:
 #         try:

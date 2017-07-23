@@ -67,8 +67,8 @@ TestDefaultParam=TestDefaultParam(dir())
 # Load the Data
 from CaloDNN.LoadData_GammaPi0 import * 
 
-ECALShape= None, 25, 25, 25
-HCALShape= None, 5, 5, 60
+ECALShape= None, 25, 25, 25, 1
+HCALShape= None, 5, 5, 60, 1
 
 TrainSampleList,TestSampleList,Norms,shapes=SetupData(FileSearch,
                                                       ECAL,HCAL,False,NClasses,
@@ -81,23 +81,21 @@ TrainSampleList,TestSampleList,Norms,shapes=SetupData(FileSearch,
                                                       HCALShape,
                                                       ECALNorm,
                                                       HCALNorm)
-#shapes[0]=shapes[0]+(1,)
-#shapes[1]=shapes[1]+(1,)
-#shapes[2]=shapes[2]+(1,)
+
 # Use DLGenerators to read data
 Train_genC = MakeGenerator(ECAL,HCAL,TrainSampleList, NSamples, LCDNormalization(Norms),
                            batchsize=BatchSize,
                            shapes=shapes,
                            n_threads=n_threads,
                            multiplier=multiplier,
-                           cachefile="/tmp/wwei-CaloDNN-LCD-TrainEvent-Cache.h5")
+                           cachefile="/tmp/mzhang-CaloDNN-LCD-TrainEvent-Cache.h5")
 
 Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, LCDNormalization(Norms),
                           batchsize=BatchSize,
                           shapes=shapes,
                           n_threads=n_threads,
                           multiplier=multiplier,
-                          cachefile="/tmp/wwei-CaloDNN-LCD-TestEvent-Cache.h5")
+                          cachefile="/tmp/mzhang-CaloDNN-LCD-TestEvent-Cache.h5")
 
 print "Train Class Index Map:", Train_genC.ClassIndexMap
 
@@ -117,6 +115,7 @@ else:
 # Build/Load the Model
 from DLTools.ModelWrapper import ModelWrapper
 from CaloDNN.Models import *
+from keras.layers import Merge
 
 # You can automatically load the latest previous training of this model.
 if TestDefaultParam("LoadPreviousModel") and not LoadModel and BuildModel:
@@ -143,41 +142,41 @@ else:
 if BuildModel and not MyModel.Model :
     import keras
     print "Building Model...",
-#
-    #if ECAL:
-        #ECALModel=Convolutional3D(Name+"ECAL")
-        #ECALModel.Build()
-        #MyModel=ECALModel
-#
-    #if HCAL:
-        #HCALModel=Convolutional3D(Name+"HCAL")
-        #HCALModel.Build()
-        #MyModel=HCALModel
-#"""
+
     if ECAL:
-        ECALModel=Fully3DImageClassification(Name+"ECAL", ECALShape, ECALWidth, ECALDepth,
-                                             BatchSize, NClasses,
-                                             init=TestDefaultParam("WeightInitialization",'normal'),
-                                             activation=TestDefaultParam("activation","relu"),
-                                             Dropout=TestDefaultParam("DropoutLayers",0.5),
-                                             BatchNormalization=TestDefaultParam("BatchNormLayers",False),
-                                             NoClassificationLayer=ECAL and HCAL,
-                                             OutputBase=OutputBase)
+        ECALModel=Convolutional3D(Name+"ECAL")
         ECALModel.Build()
         MyModel=ECALModel
 
     if HCAL:
-        HCALModel=Fully3DImageClassification(Name+"HCAL", HCALShape, ECALWidth, HCALDepth,
-                                             BatchSize, NClasses,
-                                             init=TestDefaultParam("WeightInitialization",'normal'),
-                                             activation=TestDefaultParam("activation","relu"),
-                                             Dropout=TestDefaultParam("DropoutLayers",0.5),
-                                             BatchNormalization=TestDefaultParam("BatchNormLayers",False),
-                                             NoClassificationLayer=ECAL and HCAL,
-                                             OutputBase=OutputBase)
+        HCALModel=Convolutional3D(Name+"HCAL")
         HCALModel.Build()
         MyModel=HCALModel
+
+#    if ECAL:
+#        ECALModel=Fully3DImageClassification(Name+"ECAL", ECALShape, ECALWidth, ECALDepth,
+#                                             BatchSize, NClasses,
+#                                             init=TestDefaultParam("WeightInitialization",'normal'),
+#                                             activation=TestDefaultParam("activation","relu"),
+#                                             Dropout=TestDefaultParam("DropoutLayers",0.5),
+#                                             BatchNormalization=TestDefaultParam("BatchNormLayers",False),
+#                                             NoClassificationLayer=ECAL and HCAL,
+#                                             OutputBase=OutputBase)
+#        ECALModel.Build()
+#        MyModel=ECALModel
 #
+#    if HCAL:
+#        HCALModel=Fully3DImageClassification(Name+"HCAL", HCALShape, ECALWidth, HCALDepth,
+#                                             BatchSize, NClasses,
+#                                             init=TestDefaultParam("WeightInitialization",'normal'),
+#                                             activation=TestDefaultParam("activation","relu"),
+#                                             Dropout=TestDefaultParam("DropoutLayers",0.5),
+#                                             BatchNormalization=TestDefaultParam("BatchNormLayers",False),
+#                                             NoClassificationLayer=ECAL and HCAL,
+#                                             OutputBase=OutputBase)
+#        HCALModel.Build()
+#        MyModel=HCALModel
+
     if HCAL and ECAL:
         MyModel=MergerModel(Name+"_Merged",[ECALModel,HCALModel], NClasses, WeightInitialization,
                             OutputBase=OutputBase)
