@@ -13,7 +13,7 @@ Create a working directory and go into it:
 
 Clone and install the data providers (tools for data reading):
 
-      git clone https://gitlab.anomalousdl.com/opensource/data_provider_core.git
+      git clone https://gitlab.anomalousdl.com/open-source/data_provider_core.git
       cd ./data_provider_core
       pip install -e .
       pip install -r ./requirements.txt
