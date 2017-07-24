@@ -184,13 +184,49 @@ trainCache = saveFolder + "Train.h5"
 testCache = saveFolder + "Test.h5"
 OutputBase = saveFolder + "Model" # Save folder
 
+class ConvolutionalECAL(Convolutional3D):
+
+    def Build(self):
+
+        input=Input(self.shape[1:])
+        modelT=Conv3D(filters=10, kernel_size=3, strides=(2, 2, 2), padding='valid', data_format=self.data_format, dilation_rate=(1, 1, 1), activation=self.activation, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)(modelT)
+        modelT=Dropout(0.5)(modelT)
+        modelT=Conv3D(filters=40, kernel_size=3, strides=(2, 2, 2), padding='valid', data_format=self.data_format, dilation_rate=(1, 1, 1), activation=self.activation, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)(modelT)
+
+        modelT=Flatten()(modelT)
+        modelT=Dropout(0.5)(modelT)
+        modelT=Dense(self.N_classes, activation='softmax',kernel_initializer=self.kernel_initializer)(modelT)
+
+        self.inputT=input
+        self.modelT=modelT
+        
+        self.Model=Model(input,modelT)
+
+class ConvolutionalHCAL(Convolutional3D):
+
+    def Build(self):
+
+        input=Input(self.shape[1:])
+        modelT=Conv3D(filters=10, kernel_size=2, strides=(1, 1, 1), padding='valid', data_format=self.data_format, dilation_rate=(1, 1, 1), activation=self.activation, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)(modelT)
+        modelT=Dropout(0.5)(modelT)
+        modelT=Conv3D(filters=40, kernel_size=2, strides=(1, 1, 1), padding='valid', data_format=self.data_format, dilation_rate=(1, 1, 1), activation=self.activation, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)(modelT)
+
+        modelT=Flatten()(modelT)
+        modelT=Dropout(0.5)(modelT)
+        modelT=Dense(self.N_classes, activation='softmax',kernel_initializer=self.kernel_initializer)(modelT)
+
+        self.inputT=input
+        self.modelT=modelT
+        
+        self.Model=Model(input,modelT)
+
 if ECAL:
-    ECALModel=Convolutional3D(Name+"ECAL", shape=ECALShape)
+    ECALModel=ConvolutionalECAL(Name+"ECAL", shape=ECALShape)
     ECALModel.Build()
     MyModel=ECALModel
 
 if HCAL:
-    HCALModel=Convolutional3D(Name+"HCAL", shape=HCALShape)
+    HCALModel=ConvolutionalHCAL(Name+"HCAL", shape=HCALShape)
     HCALModel.Build()
     MyModel=HCALModel
 
