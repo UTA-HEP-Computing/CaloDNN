@@ -26,7 +26,6 @@ if LowMemMode:
     
 # Calculate how many events will be used for training/validation.
 NSamples=MaxEvents-NTestSamples
-
     
 # Function to help manage optional configurations. Checks and returns
 # if an object is in current scope. Return default value if not.
@@ -70,46 +69,66 @@ from CaloDNN.LoadData import *
 ECALShape= None, 25, 25, 25
 HCALShape= None, 5, 5, 60
 
-TrainSampleList,TestSampleList,Norms,shapes=SetupData(FileSearch,
-                                                      ECAL,HCAL,False,NClasses,
-                                                      [float(NSamples)/MaxEvents,
-                                                       float(NTestSamples)/MaxEvents],
-                                                      Particles,
-                                                      BatchSize,
-                                                      multiplier,
-                                                      ECALShape,
-                                                      HCALShape,
-                                                      ECALNorm,
-                                                      HCALNorm)
+Train_genC,Test_genC,Norms,shapes=SetupData(FileSearch,
+                                            ECAL,HCAL,False,NClasses,
+                                            [float(NSamples)/MaxEvents,
+                                             float(NTestSamples)/MaxEvents],
+                                            Particles,
+                                            BatchSize,
+                                            multiplier,
+                                            ECALShape,
+                                            HCALShape,
+                                            ECALNorm,
+                                            HCALNorm,
+                                            MergeInputs() if not Cache and not Preload else None,
+                                            n_threads)
 
-# Use DLGenerators to read data
-Train_genC = MakeGenerator(ECAL,HCAL,TrainSampleList, NSamples, LCDNormalization(Norms),
-                           batchsize=BatchSize,
-                           shapes=shapes,
-                           n_threads=n_threads,
-                           multiplier=multiplier,
-                           cachefile="/tmp/CaloDNN-LCD-TrainEvent-Cache_reece.h5")
 
-Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, LCDNormalization(Norms),
-                          batchsize=BatchSize,
-                          shapes=shapes,
-                          n_threads=n_threads,
-                          multiplier=multiplier,
-                          cachefile="/tmp/CaloDNN-LCD-TestEvent-Cache_reece.h5")
+print "Starting Test Generators...",
+sys.stdout.flush()
+Test_genC.start()
+print "Done."
 
-print "Train Class Index Map:", Train_genC.ClassIndexMap
+print "Starting Training Generators...",
+sys.stdout.flush()
+Train_genC.start()
+print "Done."
 
+from DLTools.GeneratorCacher import *
+    
 if Preload:
     print "Caching data in memory for faster processing after first epoch. Hope you have enough memory."
-    Train_gen=Train_genC.PreloadGenerator()
-    Test_gen=Test_genC.PreloadGenerator()
+    Test_gen=GeneratorCacher(Test_genC.first().generate(),BatchSize,
+                             max=NSamples,
+                             wrap=True,
+                             delivery_function=MergeInputs(),
+                             cache_filename=None,   
+                             delete_cache_file=True ).PreloadGenerator()
+
+    Train_gen=GeneratorCacher(Train_genC.first().generate(),BatchSize,
+                             max=NSamples,
+                             wrap=True,
+                            delivery_function=MergeInputs(),
+                             cache_filename=None,   
+                             delete_cache_file=True ).PreloadGenerator()
 elif Cache:
     print "Caching data on disk for faster processing after first epoch. Hope you have enough disk space."
-    Train_gen=Train_genC.DiskCacheGenerator(n_threads_cache)
-    Test_gen=Test_genC.DiskCacheGenerator(n_threads_cache)
+    Test_gen=GeneratorCacher(Test_genC.first().generate(),BatchSize,
+                             max=NSamples,
+                             wrap=True,
+                             delivery_function=MergeInputs(),
+                             cache_filename=None,   
+                             delete_cache_file=True ).DiskCacheGenerator(n_threads_cache)
+
+    Train_gen=GeneratorCacher(Train_genC.first().generate(),BatchSize,
+                             max=NSamples,
+                             wrap=True,
+                             delivery_function=MergeInputs(),
+                             cache_filename=None,   
+                             delete_cache_file=True ).DiskCacheGenerator(n_threads_cache)
 else:
-    Train_gen=Train_genC.Generator()
-    Test_gen=Test_genC.Generator()
+    Test_gen=Test_genC.first().generate()
+    Train_gen=Train_genC.first().generate()
 
 
 # Build/Load the Model
@@ -236,12 +255,13 @@ if Train or (RecoverMode and FailedLoad):
     else:
         verbose=1 # Set to 2
 
+
     print "Evaluating score on test sample..."
     score = MyModel.Model.evaluate_generator(Test_gen, steps=NTestSamples/BatchSize)
-    
     print "Initial Score:", score
     MyModel.MetaData["InitialScore"]=score
-        
+
+    
     MyModel.History = MyModel.Model.fit_generator(Train_gen,
                                                   steps_per_epoch=(NSamples/BatchSize),
                                                   epochs=Epochs,
@@ -250,12 +270,17 @@ if Train or (RecoverMode and FailedLoad):
                                                   validation_steps=NTestSamples/BatchSize,
                                                   callbacks=callbacks)
 
-    score = MyModel.Model.evaluate_generator(Test_gen, steps=NTestSamples/BatchSize)
-
 
     print "Evaluating score on test sample..."
+    score = MyModel.Model.evaluate_generator(Test_gen, steps=NTestSamples/BatchSize)
     print "Final Score:", score
     MyModel.MetaData["FinalScore"]=score
+
+    print "Stopping Generators...",
+    sys.stdout.flush()
+    #Train_genC.stop()
+    #Test_genC.stop()
+    print "Done."
 
     if TestDefaultParam("RunningTime"):
         MyModel.MetaData["EpochTime"]=TSCB.history
@@ -271,18 +296,18 @@ else:
     
 # Analysis
 if Analyze:
-    print "Running Analysis."
+    Test_genA=GeneratorCacher(Test_genC.first().generate(),BatchSize,
+                              max=NSamples,
+                              wrap=True,
+                              delivery_function=MergeInputs(),
+                              cache_filename=None,   
+                              delete_cache_file=True )
+    Test_genA.PreloadData()
+    Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genA.D)
 
-    Test_genC = MakeGenerator(ECAL,HCAL,TestSampleList, NTestSamples, LCDNormalization(Norms),
-                          batchsize=BatchSize,
-                          shapes=shapes,
-                          n_threads=n_threads,
-                          multiplier=multiplier,
-                          cachefile=Test_genC.cachefilename)
-
-    Test_genC.PreloadData(n_threads_cache)
-    Test_X_ECAL, Test_X_HCAL, Test_Y = tuple(Test_genC.D)
-
+    if not os.path.exists(MyModel.OutDir):
+        os.mkdir(MyModel.OutDir)
+    
     from DLAnalysis.Classification import MultiClassificationAnalysis
     result,NewMetaData=MultiClassificationAnalysis(MyModel,[Test_X_ECAL,Test_X_HCAL],Test_Y,BatchSize,PDFFileName="ROC",
                                                    IndexMap={0:'Pi0', 2:'ChPi', 3:'Gamma', 1:'Ele'})

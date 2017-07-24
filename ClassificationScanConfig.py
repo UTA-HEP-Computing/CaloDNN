@@ -9,19 +9,25 @@ from multiprocessing import cpu_count
 from DLTools.Utils import gpu_count
 
 max_threads=12
-n_threads=int(min(round(cpu_count()/gpu_count()),max_threads))
+n_gpu=gpu_count()
+if n_gpu>0:
+    n_threads=int(min(round(cpu_count()/n_gpu),max_threads))
+else:
+    n_threads=max(1,cpu_count()-2)
+    
 print "Found",cpu_count(),"CPUs and",gpu_count(),"GPUs. Using",n_threads,"threads. max_threads =",max_threads
 
 Particles=["ChPi","Gamma","Pi0","Ele"]
 
 # Input for Mixing Generator
-FileSearch="/data/LCD/V1/*/*.h5"
+#FileSearch="/data/LCD/V1/*/*.h5"
+FileSearch="/Users/afarbin/LCD/V1/*/*.h5"
 
 # Generation Model
 Config={
     "MaxEvents":int(3.e6),
     "NTestSamples":100000,
-    "NClasses":4,
+    "NClasses":len(Particles),
 
     "Epochs":1000,
     "BatchSize":1024,
@@ -29,7 +35,7 @@ Config={
     # Configures the parallel data generator that read the input.
     # These have been optimized by hand. Your system may have
     # more optimal configuration.
-    "n_threads":n_threads,  # Number of workers
+    "n_threads":n_threads, #n_threads,  # Number of workers
     "n_threads_cache":5,
     "multiplier":1, # Read N batches worth of data in each worker
 
