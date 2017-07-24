@@ -34,7 +34,11 @@ if not os.path.exists(os.path.dirname(saveFolder)):
 
 # Number of threads
 max_threads=12
-n_threads=int(min(round(cpu_count()/gpu_count()),max_threads))
+n_gpu=gpu_count()
+if n_gpu>0:
+    n_threads=int(min(round(cpu_count()/n_gpu),max_threads))
+else:
+    n_threads=max(1,cpu_count()-2)
 print "Found",cpu_count(),"CPUs and",gpu_count(),"GPUs. Using",n_threads,"threads. max_threads =",max_threads
 
 # Particle types

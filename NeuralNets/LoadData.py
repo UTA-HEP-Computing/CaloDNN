@@ -5,6 +5,7 @@ import glob,os,sys
 import random
 from time import time
 import numpy as np
+from data_provider_core.data_providers import H5FileDataProvider
 
 GeneratorClasses=[]
 
@@ -91,14 +92,16 @@ def DivideFiles(FileSearch="/data/LCD/*/*.h5",Fractions=[.9,.1],datasetnames=["E
     return out
 
 def SetupData(FileSearch,
-              ECAL,HCAL,target,
-              NClasses,f,Particles,
-              BatchSize,
-              multiplier,
-              ECALShape,
-              HCALShape,
-              ECALNorm,
-              HCALNorm):
+            ECAL,HCAL,target,
+            NClasses,f,Particles,
+            BatchSize,
+            multiplier,
+            ECALShape,
+            HCALShape,
+            ECALNorm,
+            HCALNorm,
+            delivery_function,
+            n_threads):
     datasets=[]
     shapes=[]
     Norms=[]
@@ -124,8 +127,44 @@ def SetupData(FileSearch,
     TrainSampleList,TestSampleList=DivideFiles(FileSearch,f,
                                                datasetnames=datasets,
                                                Particles=Particles)
+    sample_spec_train = list()
+    for item in TrainSampleList:
+        sample_spec_train.append((item[0], item[1] , item[2], 1))
 
-    return TrainSampleList,TestSampleList,Norms,shapes
+    sample_spec_test = list()
+    for item in TestSampleList:
+        sample_spec_test.append((item[0], item[1] , item[2], 1))
+
+    q_multipler = 2
+    read_multiplier = 1
+    n_buckets = 1
+
+    Train_genC = H5FileDataProvider(sample_spec_train,
+                                    batch_size=BatchSize,
+                                    process_function=LCDN(Norms),
+                                    delivery_function=delivery_function,
+                                    n_readers=n_threads,
+                                    q_multipler=q_multipler,
+                                    n_buckets=n_buckets,
+                                    read_multiplier=multiplier,
+                                    make_one_hot=True,
+                                    sleep_duration=1,
+                                    wrap_examples=True)
+
+    Test_genC = H5FileDataProvider(sample_spec_test,
+                                   batch_size=BatchSize,
+                                   process_function=LCDN(Norms),
+                                   delivery_function=delivery_function,
+                                   n_readers=n_threads,
+                                   q_multipler=q_multipler,
+                                   read_multiplier=multiplier,
+                                   make_one_hot=True,
+                                   sleep_duration=1,
+                                   wrap_examples=False)
+
+    print "Class Index Map:", Train_genC.config.class_index_map
+
+    return Train_genC,Test_genC,Norms,shapes
 
 def MakeGenerator(ECAL,HCAL,
                   SampleList,NSamples,NormalizationFunction,
@@ -142,3 +181,42 @@ def MakeGenerator(ECAL,HCAL,
                                  postprocessfunction=post_f,
                                  **kwargs)
 
+def lcd_3Ddata():
+    f = h5py.File("EGshuffled.h5", "r")
+    data = f.get('ECAL')
+    dtag = f.get('TAG')
+    xtr = np.array(data)
+    tag = np.array(dtag)
+    # xtr=xtr[...,numpy.newaxis]
+    # xtr=numpy.rollaxis(xtr,4,1)
+    print xtr.shape
+
+    return xtr, tag.astype(bool)
+
+
+# ##################################################################################################################
+# CaloDNN
+# ##################################################################################################################
+def LCDN(Norms):
+    def NormalizationFunction(Ds):
+        # converting the data from an ordered-dictionary format to a list
+        Ds = [Ds[item] for item in Ds]
+        out = []
+        # print('DS', Ds)
+        # TODO replace with zip function
+        for i,D in enumerate(Ds):
+            Norm=Norms[i]
+            if Norm != 0.:
+                if isinstance(Norm, float):
+                    D /= Norm
+                if isinstance(Norm, str) and Norm.lower() == "nonlinear":
+                    D = np.tanh(
+                        np.sign(Ds[i]) * np.log(np.abs(Ds[i]) + 1.0) / 2.0)
+                out.append(D)
+        return out
+
+    return NormalizationFunction
+
+def unpack(thing):
+    #print('thing', '([{0}, {1}], {2})'.format(thing[0].shape, thing[1].shape, thing[2].shape)) 
+    return [thing[:2], thing[2]]
