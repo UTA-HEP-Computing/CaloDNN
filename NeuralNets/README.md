@@ -6,8 +6,20 @@ the package is configured to work on simulated data for the LCD
 detector concept for the CLIC collider. 
 
 ## Installation
+Create a working directory and go into it:
 
-Get the packages:
+       mkdir LCD
+       cd LCD
+
+Clone and install the data providers (tools for data reading):
+
+      git clone https://gitlab.anomalousdl.com/anomalousdl/data_provider_core.git
+      cd ./data_provider_core
+      pip install -e .
+      pip install -r ./requirements.txt
+      cd ..
+
+Clone DLKit and CaloDNN:
 
     git clone https://bitbucket.org/anomalousai/DLKit
     cd DLKit

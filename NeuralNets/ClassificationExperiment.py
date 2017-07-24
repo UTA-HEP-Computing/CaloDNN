@@ -210,12 +210,13 @@ if Train or (RecoverMode and FailedLoad):
     else:
         verbose=1 # Set to 2
 
+
     print "Evaluating score on test sample..."
     score = MyModel.Model.evaluate_generator(Test_gen, steps=NTestSamples/BatchSize)
-    
     print "Initial Score:", score
     MyModel.MetaData["InitialScore"]=score
-        
+
+    
     MyModel.History = MyModel.Model.fit_generator(Train_gen,
                                                   steps_per_epoch=(NSamples/BatchSize),
                                                   epochs=Epochs,
@@ -226,7 +227,6 @@ if Train or (RecoverMode and FailedLoad):
 
     print "Evaluating score on test sample..."
     score = MyModel.Model.evaluate_generator(Test_gen, steps=NTestSamples/BatchSize)
-
     print "Final Score:", score
     MyModel.MetaData["FinalScore"]=score
 
@@ -255,7 +255,6 @@ else:
 
 if Analyze:
     print "Running Analysis."
-
     Test_genA=GeneratorCacher(Test_genC.first().generate(),BatchSize,
                               max=NSamples,
                               wrap=True,

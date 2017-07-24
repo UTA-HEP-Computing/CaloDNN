@@ -7,6 +7,7 @@ from time import time
 import numpy as np
 from data_provider_core.data_providers import H5FileDataProvider
 
+    
 GeneratorClasses=[]
 
 def ConstantNormalization(Norms):
@@ -92,16 +93,16 @@ def DivideFiles(FileSearch="/data/LCD/*/*.h5",Fractions=[.9,.1],datasetnames=["E
     return out
 
 def SetupData(FileSearch,
-            ECAL,HCAL,target,
-            NClasses,f,Particles,
-            BatchSize,
-            multiplier,
-            ECALShape,
-            HCALShape,
-            ECALNorm,
-            HCALNorm,
-            delivery_function,
-            n_threads):
+              ECAL,HCAL,target,
+              NClasses,f,Particles,
+              BatchSize,
+              multiplier,
+              ECALShape,
+              HCALShape,
+              ECALNorm,
+              HCALNorm,
+              delivery_function,
+              n_threads):
     datasets=[]
     shapes=[]
     Norms=[]

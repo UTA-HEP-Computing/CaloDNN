@@ -44,13 +44,13 @@ ECALShape= None, 25, 25, 25
 HCALShape= None, 5, 5, 60
 
 # Input for mixing generator
-FileSearch="/data/LCD/V1/*/*.h5"
+FileSearch="/data/LCD/V2/*/*.h5"
 
 # Config settings (to save)
 Config={
     "MaxEvents":int(3.e6),
     "NTestSamples":100000,
-    "NClasses":4,
+    "NClasses":len(Particles),
 
     "Epochs":1000,
     "BatchSize":1024,
@@ -58,7 +58,7 @@ Config={
     # Configures the parallel data generator that read the input.
     # These have been optimized by hand. Your system may have
     # more optimal configuration.
-    "n_threads":n_threads,  # Number of workers
+    "n_threads":n_threads, #n_threads,  # Number of workers
     "n_threads_cache":5,
     "multiplier":1, # Read N batches worth of data in each worker
 
