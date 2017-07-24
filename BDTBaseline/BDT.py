@@ -1,7 +1,7 @@
 import AITools.AITools as AI
 
 print "Adding files"
-DIR = "/data/LCD/"
+DIR = "/data/LCD/V2/"
 dataFiles = []
 comparison = 0 # 0 for e vs. pi+, 1 for photon vs. pi0
 

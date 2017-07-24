@@ -9,10 +9,10 @@ from keras.layers.pooling import AveragePooling3D
 from keras.models import model_from_json
 
 class Convolutional3D(ModelWrapper):
-    def __init__(self, Name, **kwargs):
+    def __init__(self, Name, shape=(None,25,25,25,1), **kwargs):
         super(Convolutional3D, self).__init__(Name,**kwargs)
         self.filters=10
-        self.kernel_size=5
+        self.kernel_size=2
         self.strides=1
         self.padding='valid'
         self.data_format='channels_last'
@@ -26,6 +26,7 @@ class Convolutional3D(ModelWrapper):
         self.kernel_constraint=None
         self.bias_constraint=None
         self.N_classes=2
+        self.shape=shape
 
 
     def Build(self):
@@ -38,12 +39,11 @@ class Convolutional3D(ModelWrapper):
         #model.add(Dense(2))
         #model.add(Activation('sigmoid'))
 
-        #model=Dense(self.N_classes, activation='softmax',kernel_initializer=self.kernel_initializer)(model)
-        input=Input(shape=(25,25,25,1))
+        input=Input(self.shape[1:])
         modelT=BatchNormalization()(input)
         modelT=Conv3D(self.filters, self.kernel_size, strides=(1, 1, 1), padding='valid', data_format=self.data_format, dilation_rate=(1, 1, 1), activation=self.activation, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)(modelT)
         modelT=BatchNormalization()(modelT)
-        modelT=AveragePooling3D(pool_size=(5, 5, 5), strides=None, padding='valid', data_format='channels_last')(modelT)
+        # modelT=AveragePooling3D(pool_size=(2, 2, 2), strides=None, padding='valid', data_format='channels_last')(modelT)
 
         modelT=Flatten()(modelT)
         modelT=BatchNormalization()(modelT)

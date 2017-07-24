@@ -27,28 +27,33 @@ import os
 from multiprocessing import cpu_count
 from DLTools.Utils import gpu_count
 
+# Save location
+saveFolder = "/home/mazhang/DLKit/CaloDNN/NeuralNets/Cache/CNN_GammaPi0/"
+if not os.path.exists(os.path.dirname(saveFolder)):
+    os.makedirs(os.path.dirname(saveFolder))
+
 # Number of threads
 max_threads=12
 n_threads=int(min(round(cpu_count()/gpu_count()),max_threads))
 print "Found",cpu_count(),"CPUs and",gpu_count(),"GPUs. Using",n_threads,"threads. max_threads =",max_threads
 
 # Particle types
-Particles=["ChPi","Ele"]
+Particles=["Pi0","Gamma"]
 
 # ECAL shapes (add dimensions for conv net)
-ECALShape= None, 25, 25, 25
-HCALShape= None, 5, 5, 60
+ECALShape= (None, 25, 25, 25, 1)
+HCALShape= (None, 5, 5, 60, 1)
 
 # Input for mixing generator
-FileSearch="/data/LCD/V1/*/*.h5"
+FileSearch="/data/LCD/V2/MLDataset3D/*/*.h5"
 
-# Config settings (to save)
+# Config settings (to save in output directory)
 Config={
     "MaxEvents":int(3.e5),
     "NTestSamples":int(3.e5 * 0.2),
     "NClasses":len(Particles),
 
-    "Epochs":10,
+    "Epochs":20,
     "BatchSize":1024,
 
     # Configures the parallel data generator that read the input.
@@ -69,18 +74,12 @@ Config={
     "HCAL":True,
     "HCALNorm":"'NonLinear'",
 
-    # Set the ECAL/HCAL Width/Depth for the Dense model.
-    # Note that ECAL/HCAL Width/Depth are changed to "Width" and "Depth",
-    # if these parameters are set. 
-    "HCALWidth":32,
-    "HCALDepth":2,
-    "ECALWidth":32,
-    "ECALDepth":2,
+    # CNN properties
+    "CNNLayers":"5",
 
     # No specific reason to pick these. Needs study.
     # Note that the optimizer name should be the class name (https://keras.io/optimizers/)
     "loss":"'categorical_crossentropy'",
-
     "activation":"'relu'",
     "BatchNormLayers":True,
     "DropoutLayers":True,
@@ -104,13 +103,18 @@ Config={
 
     # Configure Running time callback
     # Set RunningTime to a value to stop training after N seconds.
-    "RunningTime": 2*3600,
+    "RunningTime": 10*3600,
 
     # Load last trained version of this model configuration. (based on Name var below)
     "LoadPreviousModel":True
 }
 
 # Add config settings to current scope
+# CNNLayers = TestDefaultParam("CNNLayers",0)
+# if CNNLayers is not 0:
+    # CNNWidth = [None] * CNNLayers
+    # CNNFeatures = [None] * CNNLayers
+
 for a in Config:
     exec(a+"="+str(Config[a]))
 
@@ -172,29 +176,17 @@ else:
 ################
 
 from CaloDNN.NeuralNets.Models import *
-OutputBase="TrainedModels" # Save folder
+trainCache = saveFolder + "Train.h5"
+testCache = saveFolder + "Test.h5"
+OutputBase = saveFolder + "Model" # Save folder
 
 if ECAL:
-    ECALModel=Fully3DImageClassification(Name+"ECAL", ECALShape, ECALWidth, ECALDepth,
-					 BatchSize, NClasses,
-					 init=TestDefaultParam("WeightInitialization",'normal'),
-					 activation=TestDefaultParam("activation","relu"),
-					 Dropout=TestDefaultParam("DropoutLayers",0.5),
-					 BatchNormalization=TestDefaultParam("BatchNormLayers",False),
-					 NoClassificationLayer=ECAL and HCAL,
-					 OutputBase=OutputBase)
+    ECALModel=Convolutional3D(Name+"ECAL", shape=ECALShape)
     ECALModel.Build()
     MyModel=ECALModel
 
 if HCAL:
-    HCALModel=Fully3DImageClassification(Name+"HCAL", HCALShape, ECALWidth, HCALDepth,
-					 BatchSize, NClasses,
-					 init=TestDefaultParam("WeightInitialization",'normal'),
-					 activation=TestDefaultParam("activation","relu"),
-					 Dropout=TestDefaultParam("DropoutLayers",0.5),
-					 BatchNormalization=TestDefaultParam("BatchNormLayers",False),
-					 NoClassificationLayer=ECAL and HCAL,
-					 OutputBase=OutputBase)
+    HCALModel=Convolutional3D(Name+"HCAL", shape=HCALShape)
     HCALModel.Build()
     MyModel=HCALModel
 

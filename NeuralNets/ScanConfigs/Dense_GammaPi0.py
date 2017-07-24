@@ -27,6 +27,11 @@ import os
 from multiprocessing import cpu_count
 from DLTools.Utils import gpu_count
 
+# Save location
+saveFolder = "/home/mazhang/DLKit/CaloDNN/NeuralNets/Cache/Dense_GammaPi0_50Epochs/"
+if not os.path.exists(os.path.dirname(saveFolder)):
+    os.makedirs(os.path.dirname(saveFolder))
+
 # Number of threads
 max_threads=12
 n_threads=int(min(round(cpu_count()/gpu_count()),max_threads))
@@ -36,19 +41,19 @@ print "Found",cpu_count(),"CPUs and",gpu_count(),"GPUs. Using",n_threads,"thread
 Particles=["Pi0","Gamma"]
 
 # ECAL shapes (add dimensions for conv net)
-ECALShape= None, 25, 25, 25, 1
-HCALShape= None, 5, 5, 60, 1
+ECALShape= None, 25, 25, 25
+HCALShape= None, 5, 5, 60
 
 # Input for mixing generator
 FileSearch="/data/LCD/V2/MLDataset/*/*.h5"
 
-# Config settings (to save)
+# Config settings (to save to metadata)
 Config={
-    "MaxEvents":int(3.e6),
-    "NTestSamples":100000,
+    "MaxEvents":int(3.e5),
+    "NTestSamples":int(3.e5 * 0.2),
     "NClasses":len(Particles),
 
-    "Epochs":1000,
+    "Epochs":50,
     "BatchSize":1024,
 
     # Configures the parallel data generator that read the input.
@@ -72,7 +77,7 @@ Config={
     # Set the ECAL/HCAL Width/Depth for the Dense model.
     # Note that ECAL/HCAL Width/Depth are changed to "Width" and "Depth",
     # if these parameters are set. 
-    "HCALWidth":32,
+    "HCALWidth":64,
     "HCALDepth":2,
     "ECALWidth":32,
     "ECALDepth":2,
@@ -172,7 +177,9 @@ else:
 ################
 
 from CaloDNN.NeuralNets.Models import *
-OutputBase="TrainedModels" # Save folder
+trainCache = saveFolder + "Train.h5"
+testCache = saveFolder + "Test.h5"
+OutputBase = saveFolder + "Model" # Save folder
 
 if ECAL:
     ECALModel=Fully3DImageClassification(Name+"ECAL", ECALShape, ECALWidth, ECALDepth,
