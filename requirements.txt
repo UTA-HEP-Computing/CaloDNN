@@ -1,7 +1,7 @@
 h5py==2.6.0
-Keras==1.2.1
+Keras==2.0.6
 matplotlib==1.5.2
 tables==3.3.0
 tabulate==0.7.7
-Theano==0.8.2
+Theano==0.9
 
