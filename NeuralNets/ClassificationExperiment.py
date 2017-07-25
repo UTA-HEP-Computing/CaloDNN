@@ -52,19 +52,21 @@ if LowMemMode: # "--LowMem"
 from CaloDNN.NeuralNets.LoadData import * 
 
 NSamples = MaxEvents - NTestSamples # Calculate how many events will be used for training/validation.
-Train_genC,Test_genC,Norms,shapes=SetupData(FileSearch,
-                                            ECAL,HCAL,False,NClasses,
-                                            [float(NSamples)/MaxEvents,
-                                             float(NTestSamples)/MaxEvents],
-                                            Particles,
-                                            BatchSize,
-                                            multiplier,
-                                            ECALShape,
-                                            HCALShape,
-                                            ECALNorm,
-                                            HCALNorm,
-                                            MergeInputs() if not Cache and not Preload else None,
-                                            n_threads)
+Train_genC,Test_genC,Norms,shapes,L1,L2=SetupData(FileSearch,
+                                                  ECAL,HCAL,False,NClasses,
+                                                  [float(NSamples)/MaxEvents,
+                                                   float(NTestSamples)/MaxEvents],
+                                                  Particles,
+                                                  BatchSize,
+                                                  multiplier,
+                                                  ECALShape,
+                                                  HCALShape,
+                                                  ECALNorm,
+                                                  HCALNorm,
+                                                  MergeInputs() if not Cache and not Preload else None,
+                                                  n_threads,
+                                                  NSamples,
+                                                  NTestSamples)
 
 
 print "Starting Test Generators...",
@@ -82,7 +84,7 @@ from DLTools.GeneratorCacher import *
 if Preload:
     print "Caching data in memory for faster processing after first epoch. Hope you have enough memory."
     Test_gen=GeneratorCacher(Test_genC.first().generate(),BatchSize,
-                             max=NSamples,
+                             max=NTestSamples,
                              wrap=True,
                              delivery_function=MergeInputs(),
                              cache_filename=None,   
@@ -97,7 +99,7 @@ if Preload:
 elif Cache:
     print "Caching data on disk for faster processing after first epoch. Hope you have enough disk space."
     Test_gen=GeneratorCacher(Test_genC.first().generate(),BatchSize,
-                             max=NSamples,
+                             max=NTestSamples,
                              wrap=True,
                              delivery_function=MergeInputs(),
                              cache_filename=None,   

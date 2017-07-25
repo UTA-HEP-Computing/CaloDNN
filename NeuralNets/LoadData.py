@@ -88,7 +88,7 @@ def DivideFiles(FileSearch="/data/LCD/*/*.h5",Fractions=[.9,.1],datasetnames=["E
         for j,Frac in enumerate(Fractions):
             EndI=int(SampleI[i]+round(NFiles*Frac))
             out[j]+=Sample[SampleI[i]:EndI]
-            SampleI[i]=EndI+1
+            SampleI[i]=EndI
 
     return out
 
@@ -102,7 +102,9 @@ def SetupData(FileSearch,
               ECALNorm,
               HCALNorm,
               delivery_function,
-              n_threads):
+              n_threads,
+              NTrain,
+              NTest):
     datasets=[]
     shapes=[]
     Norms=[]
@@ -141,6 +143,7 @@ def SetupData(FileSearch,
     n_buckets = 1
 
     Train_genC = H5FileDataProvider(sample_spec_train,
+                                    max=NTrain/BatchSize,
                                     batch_size=BatchSize,
                                     process_function=LCDN(Norms),
                                     delivery_function=delivery_function,
@@ -153,6 +156,7 @@ def SetupData(FileSearch,
                                     wrap_examples=True)
 
     Test_genC = H5FileDataProvider(sample_spec_test,
+                                   max=NTest/BatchSize,
                                    batch_size=BatchSize,
                                    process_function=LCDN(Norms),
                                    delivery_function=delivery_function,
@@ -165,7 +169,7 @@ def SetupData(FileSearch,
 
     print "Class Index Map:", Train_genC.config.class_index_map
 
-    return Train_genC,Test_genC,Norms,shapes
+    return Train_genC,Test_genC,Norms,shapes,TrainSampleList,TestSampleList
 
 def MakeGenerator(ECAL,HCAL,
                   SampleList,NSamples,NormalizationFunction,

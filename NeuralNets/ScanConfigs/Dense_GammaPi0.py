@@ -28,7 +28,9 @@ from multiprocessing import cpu_count
 from DLTools.Utils import gpu_count
 
 # Save location
-saveFolder = "/home/mazhang/DLKit/CaloDNN/NeuralNets/Cache/Dense_GammaPi0_50Epochs/"
+#saveFolder = "/home/mazhang/DLKit/CaloDNN/NeuralNets/Cache/Dense_GammaPi0_50Epochs/"
+saveFolder= "./TrainedModels"
+
 if not os.path.exists(os.path.dirname(saveFolder)):
     os.makedirs(os.path.dirname(saveFolder))
 
@@ -54,7 +56,7 @@ FileSearch="/data/LCD/V2/MLDataset/*/*.h5"
 # Config settings (to save to metadata)
 Config={
     "MaxEvents":int(3.e5),
-    "NTestSamples":int(3.e5 * 0.2),
+    "NTestSamples":int(30000),
     "NClasses":len(Particles),
 
     "Epochs":50,
