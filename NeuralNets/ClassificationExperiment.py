@@ -103,18 +103,21 @@ elif Cache:
                              wrap=True,
                              delivery_function=MergeInputs(),
                              cache_filename=None,   
-                             delete_cache_file=True ).DiskCacheGenerator(n_threads_cache)
-
+                             delete_cache_file=True,
+                             GeneratorClass=Test_genC).DiskCacheGenerator(n_threads_cache)
+    
     Train_gen=GeneratorCacher(Train_genC.first().generate(),BatchSize,
-                             max=NSamples,
-                             wrap=True,
-                             delivery_function=MergeInputs(),
-                             cache_filename=None,   
-                             delete_cache_file=True ).DiskCacheGenerator(n_threads_cache)
+                              max=NSamples,
+                              wrap=True,
+                              delivery_function=MergeInputs(),
+                              cache_filename=None,   
+                              delete_cache_file=True,
+                              GeneratorClass=Train_genC).DiskCacheGenerator(n_threads_cache)
 else:
     Test_gen=Test_genC.first().generate()
     Train_gen=Train_genC.first().generate()
 
+    
 #######################
 # Build or Load Model #
 #######################
@@ -257,6 +260,7 @@ else:
 
 if Analyze:
     print "Running Analysis."
+    #Test_genC.start()
     Test_genA=GeneratorCacher(Test_genC.first().generate(),BatchSize,
                               max=NSamples,
                               wrap=True,
@@ -268,7 +272,7 @@ if Analyze:
 
     from DLAnalysis.Classification import MultiClassificationAnalysis
     result,NewMetaData=MultiClassificationAnalysis(MyModel,[Test_X_ECAL,Test_X_HCAL],Test_Y,BatchSize,PDFFileName="ROC",
-                                                   IndexMap={0:'Pi0', 2:'ChPi', 3:'Gamma', 1:'Ele'})
+                                                   IndexMap=Test_genC.config.class_index_map)
 
     MyModel.MetaData.update(NewMetaData)
     
