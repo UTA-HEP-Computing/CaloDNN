@@ -28,19 +28,13 @@ from multiprocessing import cpu_count
 from DLTools.Utils import gpu_count
 
 # Save location
-#saveFolder = "/home/mazhang/DLKit/CaloDNN/NeuralNets/Cache/Dense_GammaPi0_50Epochs/"
-saveFolder= "./TrainedModels"
-
+saveFolder = "/home/mazhang/DLKit/CaloDNN/NeuralNets/Cache/Dense_GammaPi0_50Epochs/"
 if not os.path.exists(os.path.dirname(saveFolder)):
     os.makedirs(os.path.dirname(saveFolder))
 
 # Number of threads
 max_threads=12
-n_gpu=gpu_count()
-if n_gpu>0:
-    n_threads=int(min(round(cpu_count()/n_gpu),max_threads))
-else:
-    n_threads=max(1,cpu_count()-2)
+n_threads=int(min(round(cpu_count()/gpu_count()),max_threads))
 print "Found",cpu_count(),"CPUs and",gpu_count(),"GPUs. Using",n_threads,"threads. max_threads =",max_threads
 
 # Particle types
@@ -56,7 +50,7 @@ FileSearch="/data/LCD/V2/MLDataset/*/*.h5"
 # Config settings (to save to metadata)
 Config={
     "MaxEvents":int(3.e5),
-    "NTestSamples":int(30000),
+    "NTestSamples":int(3.e5 * 0.2),
     "NClasses":len(Particles),
 
     "Epochs":50,
@@ -83,9 +77,9 @@ Config={
     # Set the ECAL/HCAL Width/Depth for the Dense model.
     # Note that ECAL/HCAL Width/Depth are changed to "Width" and "Depth",
     # if these parameters are set. 
-    "HCALWidth":64,
+    "HCALWidth":32,
     "HCALDepth":2,
-    "ECALWidth":32,
+    "ECALWidth":64,
     "ECALDepth":2,
 
     # No specific reason to pick these. Needs study.
@@ -200,7 +194,7 @@ if ECAL:
     MyModel=ECALModel
 
 if HCAL:
-    HCALModel=Fully3DImageClassification(Name+"HCAL", HCALShape, ECALWidth, HCALDepth,
+    HCALModel=Fully3DImageClassification(Name+"HCAL", HCALShape, HCALWidth, HCALDepth,
 					 BatchSize, NClasses,
 					 init=TestDefaultParam("WeightInitialization",'normal'),
 					 activation=TestDefaultParam("activation","relu"),
