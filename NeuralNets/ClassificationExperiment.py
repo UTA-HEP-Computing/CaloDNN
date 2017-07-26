@@ -87,14 +87,14 @@ if Preload:
                              max=NTestSamples,
                              wrap=True,
                              delivery_function=MergeInputs(),
-                             cache_filename=None,   
+                             cache_filename=testCache,   
                              delete_cache_file=True ).PreloadGenerator()
 
     Train_gen=GeneratorCacher(Train_genC.first().generate(),BatchSize,
                              max=NSamples,
                              wrap=True,
                             delivery_function=MergeInputs(),
-                             cache_filename=None,   
+                             cache_filename=trainCache,   
                              delete_cache_file=True ).PreloadGenerator()
 elif Cache:
     print "Caching data on disk for faster processing after first epoch. Hope you have enough disk space."
@@ -102,7 +102,7 @@ elif Cache:
                              max=NTestSamples,
                              wrap=True,
                              delivery_function=MergeInputs(),
-                             cache_filename=None,   
+                             cache_filename=testCache,   
                              delete_cache_file=True,
                              GeneratorClass=Test_genC).DiskCacheGenerator(n_threads_cache)
     
@@ -110,7 +110,7 @@ elif Cache:
                               max=NSamples,
                               wrap=True,
                               delivery_function=MergeInputs(),
-                              cache_filename=None,   
+                              cache_filename=trainCache,   
                               delete_cache_file=True,
                               GeneratorClass=Train_genC).DiskCacheGenerator(n_threads_cache)
 else:
