@@ -151,6 +151,7 @@ if BuildModel and not MyModel.Model :
     import keras
     print "Building Model...",
     MyModel = ConfigModel
+    MyModel.OutDir = OutputBase # adds .Test suffix when necessary
     MyModel.Build() # Build it
     print " Done."
 
