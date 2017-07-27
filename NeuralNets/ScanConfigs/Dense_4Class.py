@@ -27,6 +27,11 @@ import os
 from multiprocessing import cpu_count
 from DLTools.Utils import gpu_count
 
+# Save location
+saveFolder = "/home/mazhang/DLKit/CaloDNN/NeuralNets/Cache/Dense_GammaPi0_50Epochs/"
+if not os.path.exists(os.path.dirname(saveFolder)):
+    os.makedirs(os.path.dirname(saveFolder))
+
 # Number of threads
 max_threads=12
 n_gpu=gpu_count()
@@ -176,7 +181,9 @@ else:
 ################
 
 from CaloDNN.NeuralNets.Models import *
-OutputBase="TrainedModels" # Save folder
+trainCache = saveFolder + "Train.h5"
+testCache = saveFolder + "Test.h5"
+OutputBase = saveFolder + "Model" # Save folder
 
 if ECAL:
     ECALModel=Fully3DImageClassification(Name+"ECAL", ECALShape, ECALWidth, ECALDepth,

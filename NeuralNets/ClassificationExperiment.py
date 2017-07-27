@@ -9,7 +9,7 @@ sys.dont_write_bytecode = True
 # Read in Arguments #
 #####################
 
-import sys,os,argparse
+import os,argparse
 execfile("CaloDNN/NeuralNets/ClassificationArguments.py")
 execfile(ConfigFile) # ConfigFile passed with -C flag (see ClassificationArguments.py)
 
