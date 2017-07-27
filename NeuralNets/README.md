@@ -8,16 +8,8 @@ detector concept for the CLIC collider.
 ## Installation
 Create a working directory and go into it:
 
-       mkdir LCD
-       cd LCD
-
-Clone and install the data providers (tools for data reading):
-
-      git clone https://gitlab.anomalousdl.com/open-source/data_provider_core.git
-      cd ./data_provider_core
-      pip install -e .
-      pip install -r ./requirements.txt
-      cd ..
+    mkdir LCD
+    cd LCD
 
 Clone DLKit and CaloDNN:
 
@@ -25,9 +17,15 @@ Clone DLKit and CaloDNN:
     cd DLKit
     git clone https://github.com/UTA-HEP-Computing/CaloDNN
 
-Work from DLKit Directory:
+Clone and install the data providers (tools for data reading):
 
-    cd DLKit
+    git clone https://gitlab.anomalousdl.com/open-source/data_provider_core.git
+    cd ./data_provider_core
+    pip install -e .
+    pip install -r ./requirements.txt
+    cd ..
+
+Work from DLKit Directory.
 
 Make sure CUDA is setup if you are using GPUs (default) or add `--cpu`
 flag below to run on CPUs.
@@ -44,7 +42,7 @@ on the command line or through Jupyter notebooks (see examples in
 package). Run the experiment with `--help` switch to see the command-line
 options:
 
-    python -m CaloDNN.ClassificationExperiment --help
+    python -m CaloDNN.NeuralNets.ClassificationExperiment --help
 
 Edit `CaloDNN/ClassificationScanConfig.py` to set input files and
 experiment configuration. Please read the comments in the various
@@ -54,18 +52,18 @@ hyperparameter scans.
 
 Run an experiment by:
 
-    python -m CaloDNN.ClassificationExperiment
+    python -m CaloDNN.NeuralNets.ClassificationExperiment
 
 Run a series of experiments with different parameters (as configured
 in `Params` dictionary in `CaloDNN/ClassificationScanConfig.py`) by
 first seeing how many possible experiments:
 
-    python -m CaloDNN.ClassificationScanConfig
+    python -m CaloDNN.NeuralNets.ClassificationScanConfig
 
 and then running N experiments with the different configurations using
 `-s` option and an integer between 0 and N:
 
-    python -m CaloDNN.ClassificationExperiment -s 5
+    python -m CaloDNN.NeuralNets.ClassificationExperiment -s 5
 
 The models and results are stored in `TrainedModels` directory.
 

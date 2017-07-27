@@ -28,7 +28,7 @@ if __name__ == "__main__":
     classLabels = ["photon", "pi0"]
 
     dataFiles = []
-    for fileN in range(1):
+    for fileN in range(10, 20):
 	dataFiles.append((gammaPath + "GammaEscan_" + str(fileN) + ".h5", GAMMA))
 	dataFiles.append((pi0Path + "Pi0Escan_" + str(fileN) + ".h5", PI0))
 
