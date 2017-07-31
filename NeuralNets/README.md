@@ -11,19 +11,16 @@ Create a working directory and go into it:
     mkdir LCD
     cd LCD
 
+Clone and install the data providers (tools for data reading):
+
+    git clone https://github.com/anomalousdl/adlkit
+    pip install -e ./adlkit
+
 Clone DLKit and CaloDNN:
 
     git clone https://bitbucket.org/anomalousai/DLKit
     cd DLKit
     git clone https://github.com/UTA-HEP-Computing/CaloDNN
-
-Clone and install the data providers (tools for data reading):
-
-    git clone https://gitlab.anomalousdl.com/open-source/data_provider_core.git
-    cd ./data_provider_core
-    pip install -e .
-    pip install -r ./requirements.txt
-    cd ..
 
 Work from DLKit Directory.
 
