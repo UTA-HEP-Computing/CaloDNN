@@ -57,7 +57,7 @@ Config={
     "NTestSamples":int(3.e5 * 0.2),
     "NClasses":len(Particles),
 
-    "Epochs":20,
+    "Epochs":500,
     "BatchSize":1024,
 
     # Configures the parallel data generator that read the input.
@@ -92,7 +92,7 @@ Config={
     # and parameters (using constructor keywords as parameter name).
     # Note if parameter is not specified, default values are used.
     "optimizer":"'RMSprop'",
-    "lr":0.01,    
+    "lr":0.5,    
     "decay":0.001,
 
     # Parameter monitored by Callbacks
@@ -107,7 +107,7 @@ Config={
 
     # Configure Running time callback
     # Set RunningTime to a value to stop training after N seconds.
-    "RunningTime": 10*3600,
+    "RunningTime": 24*3600,
 
     # Load last trained version of this model configuration. (based on Name var below)
     "LoadPreviousModel":True
@@ -186,16 +186,16 @@ OutputBase = saveFolder + "Model" # Save folder
 
 class ConvolutionalECAL(Convolutional3D):
 
+    from keras.layers.core import Activation
+
     def Build(self):
 
         input=Input(self.shape[1:])
         modelT=Conv3D(filters=3, kernel_size=3, strides=(2, 2, 2), padding='valid', data_format=self.data_format, dilation_rate=(1, 1, 1), activation=self.activation, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)(input)
-        modelT=Dropout(0.5)(modelT)
         modelT=Conv3D(filters=8, kernel_size=3, strides=(2, 2, 2), padding='valid', data_format=self.data_format, dilation_rate=(1, 1, 1), activation=self.activation, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)(modelT)
 
         modelT=Flatten()(modelT)
         modelT=Dropout(0.5)(modelT)
-        modelT=Dense(self.N_classes, activation='softmax',kernel_initializer=self.kernel_initializer)(modelT)
 
         self.inputT=input
         self.modelT=modelT
@@ -204,16 +204,16 @@ class ConvolutionalECAL(Convolutional3D):
 
 class ConvolutionalHCAL(Convolutional3D):
 
+    from keras.layers.core import Activation
+
     def Build(self):
 
         input=Input(self.shape[1:])
         modelT=Conv3D(filters=3, kernel_size=(2, 2, 5), strides=(1, 1, 2), padding='valid', data_format=self.data_format, dilation_rate=(1, 1, 1), activation=self.activation, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)(input)
-        modelT=Dropout(0.5)(modelT)
         modelT=Conv3D(filters=8, kernel_size=(2, 2, 5), strides=(1, 1, 2), padding='valid', data_format=self.data_format, dilation_rate=(1, 1, 1), activation=self.activation, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)(modelT)
 
         modelT=Flatten()(modelT)
         modelT=Dropout(0.5)(modelT)
-        modelT=Dense(self.N_classes, activation='softmax',kernel_initializer=self.kernel_initializer)(modelT)
 
         self.inputT=input
         self.modelT=modelT

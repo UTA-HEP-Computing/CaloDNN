@@ -24,6 +24,21 @@ import sys,argparse
 from numpy import arange
 import os
 
+sys.path = ['',
+ '/opt/root/lib/root',
+ '/usr/lib/python2.7',
+ '/usr/lib/python2.7/plat-x86_64-linux-gnu',
+ '/usr/lib/python2.7/lib-tk',
+ '/usr/lib/python2.7/lib-old',
+ '/usr/lib/python2.7/lib-dynload',
+ '/usr/local/lib/python2.7/dist-packages',
+ '/usr/lib/python2.7/dist-packages',
+ '/usr/local/lib/python2.7/dist-packages/IPython/extensions',
+ '/home/mazhang/.ipython',
+ '/home/jupyterhubadmin/.virtualenvs/meow/local/lib/python2.7/site-packages/',
+ # '/home/mazhang/DLKit/data_provider_core/']
+ '/home/mazhang/DLKit/adlkit/']
+
 from multiprocessing import cpu_count
 from DLTools.Utils import gpu_count
 
@@ -77,10 +92,10 @@ Config={
     # Set the ECAL/HCAL Width/Depth for the Dense model.
     # Note that ECAL/HCAL Width/Depth are changed to "Width" and "Depth",
     # if these parameters are set. 
-    "HCALWidth":32,
-    "HCALDepth":2,
     "ECALWidth":64,
     "ECALDepth":2,
+    "HCALWidth":32,
+    "HCALDepth":2,
 
     # No specific reason to pick these. Needs study.
     # Note that the optimizer name should be the class name (https://keras.io/optimizers/)
@@ -109,7 +124,7 @@ Config={
 
     # Configure Running time callback
     # Set RunningTime to a value to stop training after N seconds.
-    "RunningTime": 10*3600,
+    "RunningTime": 24*3600,
 
     # Load last trained version of this model configuration. (based on Name var below)
     "LoadPreviousModel":True

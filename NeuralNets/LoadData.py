@@ -5,7 +5,8 @@ import glob,os,sys
 import random
 from time import time
 import numpy as np
-from data_provider_core.data_providers import H5FileDataProvider
+# from data_provider_core.data_providers import H5FileDataProvider
+from adlkit.data_providers import H5FileDataProvider
 
     
 GeneratorClasses=[]
