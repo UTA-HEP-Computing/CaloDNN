@@ -49,7 +49,7 @@ ECALShape= None, 25, 25, 25
 HCALShape= None, 5, 5, 60
 
 # Input for mixing generator
-FileSearch="/data/LCD/V2/*/*.h5"
+FileSearch="/data/LCD/V1/*/*.h5"
 
 # Config settings (to save)
 Config={
