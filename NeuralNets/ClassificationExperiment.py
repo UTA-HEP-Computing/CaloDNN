@@ -13,6 +13,10 @@ import os,argparse
 execfile("CaloDNN/NeuralNets/ClassificationArguments.py")
 execfile(ConfigFile) # ConfigFile passed with -C flag (see ClassificationArguments.py)
 
+
+import logging as lg
+lg.basicConfig(level=lg.WARNING, format='%(asctime)s %(levelname)s %(name)s %(message)s ')
+
 ###################
 # Parse Arguments #
 ###################
@@ -20,7 +24,7 @@ execfile(ConfigFile) # ConfigFile passed with -C flag (see ClassificationArgumen
 if TestMode: # Use "--Test" to run on less events and epochs. Overwrites some options from ConfigFile
     MaxEvents=int(20e3)
     NTestSamples=int(20e2)
-    Epochs=10
+    Epochs=2
     OutputBase+=".Test"
     print "Test Mode: Set MaxEvents to",MaxEvents,"and Epochs to", Epochs
 
@@ -37,17 +41,6 @@ if LowMemMode: # "--LowMem"
 # We apply a constant Normalization to the input and target data. The ConstantNormalization function, which is applied during reading,
 # takes a list with the entries corresponding to the Tensors read from input file. For LCD Data set the tensors are [ ECAL, HCAL, OneHot ]
 # so the normalization constant is [ ECALNorm, HCALNorm, 1. ]. 
-
-# We have 3 methods of reading the LCD Data set, which comes in as a large set of files separated into subdirectories corresponding to
-# particle type. For training, this data needs to be mixed and "OneHot" labels created. Everything uses the ThreadedGenerator from
-# DLTools.
-#
-# Methods (from slow to fast):
-# 1. Read and mix the files on fly. (--nopremix)
-# 2. Premix the files into single input file using LCDData.py, then read the large file on the fly. (default)
-# 3. Load the data into memory, so Epochs>1 are significantly accelerated. Uses a lot of memory. Works either 1 or 2 
-# above. (--preload)
-# (Note 1 and 2 can be made automatic with a bit of effort, but will be slow due to serial writing, unless it's parallelized.)
 
 from CaloDNN.NeuralNets.LoadData import * 
 
@@ -84,40 +77,41 @@ from DLTools.GeneratorCacher import *
 if Preload:
     print "Caching data in memory for faster processing after first epoch. Hope you have enough memory."
     Test_gen=GeneratorCacher(Test_genC.first().generate(),BatchSize,
-                             max=NTestSamples,
+                             max=NTestSamples/BatchSize,
                              wrap=True,
                              delivery_function=MergeInputs(),
-                             cache_filename=testCache,   
+                             #cache_filename=testCache,   
                              delete_cache_file=True ).PreloadGenerator()
-
+    
     Train_gen=GeneratorCacher(Train_genC.first().generate(),BatchSize,
-                             max=NSamples,
-                             wrap=True,
-                            delivery_function=MergeInputs(),
-                             cache_filename=trainCache,   
-                             delete_cache_file=True ).PreloadGenerator()
+                              max=NSamples/BatchSize,
+                              wrap=True,
+                              delivery_function=MergeInputs(),
+                              #cache_filename=trainCache,   
+                              delete_cache_file=True ).PreloadGenerator()
 elif Cache:
     print "Caching data on disk for faster processing after first epoch. Hope you have enough disk space."
     Test_gen=GeneratorCacher(Test_genC.first().generate(),BatchSize,
-                             max=NTestSamples,
+                             max=NTestSamples/BatchSize,
                              wrap=True,
                              delivery_function=MergeInputs(),
-                             cache_filename=testCache,   
+                             #cache_filename=testCache,   
                              delete_cache_file=True,
                              GeneratorClass=Test_genC).DiskCacheGenerator(n_threads_cache)
     
     Train_gen=GeneratorCacher(Train_genC.first().generate(),BatchSize,
-                              max=NSamples,
+                              max=NSamples/BatchSize,
                               wrap=True,
                               delivery_function=MergeInputs(),
-                              cache_filename=trainCache,   
+                              #cache_filename=trainCache,   
                               delete_cache_file=True,
                               GeneratorClass=Train_genC).DiskCacheGenerator(n_threads_cache)
 else:
     Test_gen=Test_genC.first().generate()
     Train_gen=Train_genC.first().generate()
 
-    
+#for D in Test_gen: print D[0][0].shape,D[0][1].shape,D[1].shape
+
 #######################
 # Build or Load Model #
 #######################
@@ -263,7 +257,7 @@ if Analyze:
     print "Running Analysis."
     #Test_genC.start()
     Test_genA=GeneratorCacher(Test_genC.first().generate(),BatchSize,
-                              max=NSamples,
+                              max=NSamples/BatchSize,
                               wrap=True,
                               delivery_function=MergeInputs(),
                               cache_filename=None,   

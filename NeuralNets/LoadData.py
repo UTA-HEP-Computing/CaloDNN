@@ -7,7 +7,7 @@ from time import time
 import numpy as np
 # from data_provider_core.data_providers import H5FileDataProvider
 from adlkit.data_providers import H5FileDataProvider
-
+import math
     
 GeneratorClasses=[]
 
@@ -144,7 +144,7 @@ def SetupData(FileSearch,
     n_buckets = 1
 
     Train_genC = H5FileDataProvider(sample_spec_train,
-                                    max=NTrain/BatchSize,
+                                    max=math.ceil(float(NTrain)/BatchSize),
                                     batch_size=BatchSize,
                                     process_function=LCDN(Norms),
                                     delivery_function=delivery_function,
@@ -157,7 +157,7 @@ def SetupData(FileSearch,
                                     wrap_examples=True)
 
     Test_genC = H5FileDataProvider(sample_spec_test,
-                                   max=NTest/BatchSize,
+                                   max=math.ceil(float(NTest)/BatchSize),
                                    batch_size=BatchSize,
                                    process_function=LCDN(Norms),
                                    delivery_function=delivery_function,
@@ -204,6 +204,8 @@ def lcd_3Ddata():
 # ##################################################################################################################
 # CaloDNN
 # ##################################################################################################################
+
+
 def LCDN(Norms):
     def NormalizationFunction(Ds):
         # converting the data from an ordered-dictionary format to a list
