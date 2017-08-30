@@ -43,18 +43,20 @@ print "Found",cpu_count(),"CPUs and",gpu_count(),"GPUs. Using",n_threads,"thread
 
 # Particle types
 Particles=["ChPi","Gamma","Pi0","Ele"]
+#Particles=["Gamma","Pi0"]
 
 # ECAL shapes (add dimensions for conv net)
 ECALShape= None, 25, 25, 25
 HCALShape= None, 5, 5, 60
 
 # Input for mixing generator
-FileSearch="/data/LCD/V1/*/*.h5"
+# CHECKPOINT - wrong folder!!!!!
+FileSearch="/data/LCD/V2/MLDataset/*/*.h5"
 
 # Config settings (to save)
 Config={
     "MaxEvents":int(3.e6),
-    "NTestSamples":100000,
+    "NTestSamples":10000,
     "NClasses":len(Particles),
 
     "Epochs":1000,
@@ -83,7 +85,7 @@ Config={
     # if these parameters are set. 
     "HCALWidth":32,
     "HCALDepth":2,
-    "ECALWidth":32,
+    "ECALWidth":64,
     "ECALDepth":2,
 
     # No specific reason to pick these. Needs study.

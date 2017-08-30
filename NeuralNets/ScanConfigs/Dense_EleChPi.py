@@ -27,6 +27,11 @@ import os
 from multiprocessing import cpu_count
 from DLTools.Utils import gpu_count
 
+# Save location
+saveFolder = "/home/mazhang/DLKit/CaloDNN/NeuralNets/Cache/Dense_GammaPi0_50Epochs/"
+if not os.path.exists(os.path.dirname(saveFolder)):
+    os.makedirs(os.path.dirname(saveFolder))
+
 # Number of threads
 max_threads=12
 n_gpu=gpu_count()
@@ -44,7 +49,8 @@ ECALShape= None, 25, 25, 25
 HCALShape= None, 5, 5, 60
 
 # Input for mixing generator
-FileSearch="/data/LCD/V1/*/*.h5"
+# CHECKPOINT - wrong folder!!!!!
+FileSearch="/data/LCD/V2/MLDataset/*/*.h5"
 
 # Config settings (to save)
 Config={
@@ -52,13 +58,13 @@ Config={
     "NTestSamples":int(3.e5 * 0.2),
     "NClasses":len(Particles),
 
-    "Epochs":10,
+    "Epochs":150,
     "BatchSize":1024,
 
     # Configures the parallel data generator that read the input.
     # These have been optimized by hand. Your system may have
     # more optimal configuration.
-    "n_threads":n_threads,  # Number of workers
+    "n_threads":n_threads, #n_threads,  # Number of workers
     "n_threads_cache":5,
     "multiplier":1, # Read N batches worth of data in each worker
 
@@ -78,7 +84,7 @@ Config={
     # if these parameters are set. 
     "HCALWidth":32,
     "HCALDepth":2,
-    "ECALWidth":32,
+    "ECALWidth":64,
     "ECALDepth":2,
 
     # No specific reason to pick these. Needs study.
@@ -108,7 +114,7 @@ Config={
 
     # Configure Running time callback
     # Set RunningTime to a value to stop training after N seconds.
-    "RunningTime": 2*3600,
+    "RunningTime": 24*3600,
 
     # Load last trained version of this model configuration. (based on Name var below)
     "LoadPreviousModel":True
@@ -176,7 +182,9 @@ else:
 ################
 
 from CaloDNN.NeuralNets.Models import *
-OutputBase="TrainedModels" # Save folder
+trainCache = saveFolder + "Train.h5"
+testCache = saveFolder + "Test.h5"
+OutputBase = saveFolder + "Model" # Save folder
 
 if ECAL:
     ECALModel=Fully3DImageClassification(Name+"ECAL", ECALShape, ECALWidth, ECALDepth,

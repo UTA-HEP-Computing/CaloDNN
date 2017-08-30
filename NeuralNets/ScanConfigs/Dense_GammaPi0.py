@@ -24,21 +24,6 @@ import sys,argparse
 from numpy import arange
 import os
 
-sys.path = ['',
- '/opt/root/lib/root',
- '/usr/lib/python2.7',
- '/usr/lib/python2.7/plat-x86_64-linux-gnu',
- '/usr/lib/python2.7/lib-tk',
- '/usr/lib/python2.7/lib-old',
- '/usr/lib/python2.7/lib-dynload',
- '/usr/local/lib/python2.7/dist-packages',
- '/usr/lib/python2.7/dist-packages',
- '/usr/local/lib/python2.7/dist-packages/IPython/extensions',
- '/home/mazhang/.ipython',
- '/home/jupyterhubadmin/.virtualenvs/meow/local/lib/python2.7/site-packages/',
- # '/home/mazhang/DLKit/data_provider_core/']
- '/home/mazhang/DLKit/adlkit/']
-
 from multiprocessing import cpu_count
 from DLTools.Utils import gpu_count
 
@@ -49,32 +34,37 @@ if not os.path.exists(os.path.dirname(saveFolder)):
 
 # Number of threads
 max_threads=12
-n_threads=int(min(round(cpu_count()/gpu_count()),max_threads))
+n_gpu=gpu_count()
+if n_gpu>0:
+    n_threads=int(min(round(cpu_count()/n_gpu),max_threads))
+else:
+    n_threads=max(1,cpu_count()-2)
 print "Found",cpu_count(),"CPUs and",gpu_count(),"GPUs. Using",n_threads,"threads. max_threads =",max_threads
 
 # Particle types
-Particles=["Pi0","Gamma"]
+Particles=["Gamma","Pi0"]
 
 # ECAL shapes (add dimensions for conv net)
 ECALShape= None, 25, 25, 25
 HCALShape= None, 5, 5, 60
 
 # Input for mixing generator
+# CHECKPOINT - wrong folder!!!!!
 FileSearch="/data/LCD/V2/MLDataset/*/*.h5"
 
-# Config settings (to save to metadata)
+# Config settings (to save)
 Config={
     "MaxEvents":int(3.e5),
     "NTestSamples":int(3.e5 * 0.2),
     "NClasses":len(Particles),
 
-    "Epochs":50,
+    "Epochs":150,
     "BatchSize":1024,
 
     # Configures the parallel data generator that read the input.
     # These have been optimized by hand. Your system may have
     # more optimal configuration.
-    "n_threads":n_threads,  # Number of workers
+    "n_threads":n_threads, #n_threads,  # Number of workers
     "n_threads_cache":5,
     "multiplier":1, # Read N batches worth of data in each worker
 
@@ -92,10 +82,10 @@ Config={
     # Set the ECAL/HCAL Width/Depth for the Dense model.
     # Note that ECAL/HCAL Width/Depth are changed to "Width" and "Depth",
     # if these parameters are set. 
-    "ECALWidth":64,
-    "ECALDepth":2,
     "HCALWidth":32,
     "HCALDepth":2,
+    "ECALWidth":64,
+    "ECALDepth":2,
 
     # No specific reason to pick these. Needs study.
     # Note that the optimizer name should be the class name (https://keras.io/optimizers/)
@@ -209,7 +199,7 @@ if ECAL:
     MyModel=ECALModel
 
 if HCAL:
-    HCALModel=Fully3DImageClassification(Name+"HCAL", HCALShape, HCALWidth, HCALDepth,
+    HCALModel=Fully3DImageClassification(Name+"HCAL", HCALShape, ECALWidth, HCALDepth,
 					 BatchSize, NClasses,
 					 init=TestDefaultParam("WeightInitialization",'normal'),
 					 activation=TestDefaultParam("activation","relu"),
