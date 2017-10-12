@@ -28,7 +28,7 @@ from multiprocessing import cpu_count
 from DLTools.Utils import gpu_count
 
 # Save location
-saveFolder = "/home/mazhang/DLKit/CaloDNN/NeuralNets/Cache/Dense_GammaPi0_50Epochs/"
+saveFolder = "/home/mazhang/DLKit/CaloDNN/NeuralNets/Cache/Dense_EleChPi_50Epochs/"
 if not os.path.exists(os.path.dirname(saveFolder)):
     os.makedirs(os.path.dirname(saveFolder))
 
@@ -49,8 +49,7 @@ ECALShape= None, 25, 25, 25
 HCALShape= None, 5, 5, 60
 
 # Input for mixing generator
-# CHECKPOINT - wrong folder!!!!!
-FileSearch="/data/LCD/V2/MLDataset/*/*.h5"
+FileSearch="/data/LCD/V2/EleChPi/*/*.h5"
 
 # Config settings (to save)
 Config={
@@ -58,7 +57,7 @@ Config={
     "NTestSamples":int(3.e5 * 0.2),
     "NClasses":len(Particles),
 
-    "Epochs":150,
+    "Epochs":50,
     "BatchSize":1024,
 
     # Configures the parallel data generator that read the input.
@@ -199,7 +198,7 @@ if ECAL:
     MyModel=ECALModel
 
 if HCAL:
-    HCALModel=Fully3DImageClassification(Name+"HCAL", HCALShape, ECALWidth, HCALDepth,
+    HCALModel=Fully3DImageClassification(Name+"HCAL", HCALShape, HCALWidth, HCALDepth,
 					 BatchSize, NClasses,
 					 init=TestDefaultParam("WeightInitialization",'normal'),
 					 activation=TestDefaultParam("activation","relu"),

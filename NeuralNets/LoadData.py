@@ -6,7 +6,7 @@ import random
 from time import time
 import numpy as np
 # from data_provider_core.data_providers import H5FileDataProvider
-from adlkit.adlkit.data_provider import H5FileDataProvider
+from adlkit.data_provider import H5FileDataProvider
 import math
     
 GeneratorClasses=[]

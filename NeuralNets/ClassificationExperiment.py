@@ -13,7 +13,6 @@ import os,argparse
 execfile("CaloDNN/NeuralNets/ClassificationArguments.py")
 execfile(ConfigFile) # ConfigFile passed with -C flag (see ClassificationArguments.py)
 
-
 import logging as lg
 lg.basicConfig(level=lg.WARNING, format='%(asctime)s %(levelname)s %(name)s %(message)s ')
 
@@ -60,7 +59,6 @@ Train_genC,Test_genC,Norms,shapes,L1,L2=SetupData(FileSearch,
                                                   n_threads,
                                                   NSamples,
                                                   NTestSamples)
-
 
 print "Starting Test Generators...",
 sys.stdout.flush()
@@ -210,13 +208,11 @@ if Train or (RecoverMode and FailedLoad):
     else:
         verbose=1 # Set to 2
 
-
     print "Evaluating score on test sample..."
     score = MyModel.Model.evaluate_generator(Test_gen, steps=NTestSamples/BatchSize)
     print "Initial Score:", score
     MyModel.MetaData["InitialScore"]=score
 
-    
     MyModel.History = MyModel.Model.fit_generator(Train_gen,
                                                   steps_per_epoch=(NSamples/BatchSize),
                                                   epochs=Epochs,

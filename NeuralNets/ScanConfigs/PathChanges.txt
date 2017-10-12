@@ -1,0 +1,16 @@
+import sys
+
+sys.path = ['',
+ '/opt/root/lib/root',
+ '/usr/lib/python2.7',
+ '/usr/lib/python2.7/plat-x86_64-linux-gnu',
+ '/usr/lib/python2.7/lib-tk',
+ '/usr/lib/python2.7/lib-old',
+ '/usr/lib/python2.7/lib-dynload',
+ '/usr/local/lib/python2.7/dist-packages',
+ '/usr/lib/python2.7/dist-packages',
+ '/usr/local/lib/python2.7/dist-packages/IPython/extensions',
+ '/home/mazhang/.ipython',
+ '/home/jupyterhubadmin/.virtualenvs/meow/local/lib/python2.7/site-packages/',
+ # '/home/mazhang/DLKit/data_provider_core/']
+ '/home/mazhang/DLKit/adlkit/']
