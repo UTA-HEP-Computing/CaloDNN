@@ -16,7 +16,7 @@ def load_hdf5(file):
     with h5py.File(file, 'r') as f:
         ECAL = f['ECAL'][:]
         HCAL = f['HCAL'][:]
-        pdgID = f['pdgID'][:]
+        pdgID = f['pdgID'][:,0]
 
     return ECAL, HCAL, pdgID
 
@@ -43,8 +43,9 @@ class HDF5Dataset(data.Dataset):
         self.dataname_tuples = sorted(dataname_tuples)
         self.num_per_file = num_per_file
         self.fileInMemory = -1
-        self.ECAL = None
-        self.HCAL = None
+        self.ECAL = []
+        self.HCAL = []
+        self.y = []
         self.classPdgID = {}
         for i, ID in enumerate(classPdgID):
             self.classPdgID[ID] = i
@@ -53,19 +54,22 @@ class HDF5Dataset(data.Dataset):
         fileN = index/self.num_per_file
         indexInFile = index%self.num_per_file
         if(fileN != self.fileInMemory):
-            for dataname in dataname_tuples[fileN]:
+            self.ECAL = []
+            self.HCAL = []
+            self.y = []
+            for dataname in self.dataname_tuples[fileN]:
                 file_ECAL, file_HCAL, file_pdgID = load_hdf5(dataname)
-                if (self.ECAL != None):
-                    self.ECAL = np.append(self.ECAL, file_ECAL)
-                    self.HCAL = np.append(self.HCAL, file_HCAL)
-                    pdgID = np.append(self.pdgID, file_pdgID) 
-                    self.y = [classPdgID[abs(i)] for i in pdgID]
+                if (self.ECAL != []):
+                    self.ECAL = np.append(self.ECAL, file_ECAL, axis=0)
+                    self.HCAL = np.append(self.HCAL, file_HCAL, axis=0)
+                    newy = [self.classPdgID[abs(i)] for i in file_pdgID] # should probably make this one-hot
+                    self.y = np.append(self.y, newy) 
                 else:
                     self.ECAL = file_ECAL
                     self.HCAL = file_HCAL
-                    self.y = [classPdgID[abs(i)] for i in file_pdgID]
+                    self.y = [self.classPdgID[abs(i)] for i in file_pdgID] # should probably make this one-hot
             self.fileInMemory = fileN
-        return self.ECAL[indexInFile], self.HCAL[indexInFile], self.pdgID[indexInFile]
+        return self.ECAL[indexInFile], self.HCAL[indexInFile], self.y[indexInFile]
 
     def __len__(self):
         return len(self.dataname_tuples)*self.num_per_file
