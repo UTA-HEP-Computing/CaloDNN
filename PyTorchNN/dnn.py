@@ -1,3 +1,4 @@
+import sys
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
@@ -6,6 +7,7 @@ import torch.optim as optim
 import torch.utils.data as data
 import loader
 import glob
+import os
 import numpy as np
 import h5py as h5
 
@@ -13,21 +15,24 @@ import h5py as h5
 # Set options #
 ###############
 
-basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V2/SmallEleChPi/"
+basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V2/EleChPi/"
 samplePath = [basePath + "ChPiEscan/ChPiEscan_*.h5", basePath + "EleEscan/EleEscan_*.h5"]
 classPdgID = [211, 11] # absolute IDs corresponding to paths above
 eventsPerFile = 10000
 
-OutPath = "Output/DNN/PyTorchTest/"
-trainRatio = 0.6
-learningRate = 0.01
-decayRate = 0
-dropoutProb = 0.3
+trainRatio = 0.9
 nEpochs = 5
 batchSize = 1000
 nworkers = 4
-hiddenLayerNeurons = 32
-nHiddenLayers = 5
+
+parameters = "_".join(sys.argv[1:])
+OutPath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/SubmissionScripts/PyTorchNN/Output/"+parameters+"/"
+
+learningRate = float(sys.argv[1]) # 0.01
+decayRate = float(sys.argv[2]) # 0
+dropoutProb = float(sys.argv[3]) # 0.3
+hiddenLayerNeurons = int(sys.argv[4]) # 32
+nHiddenLayers = int(sys.argv[5]) # 5
 
 ##############
 # Load files #
@@ -104,11 +109,11 @@ for epoch in range(nEpochs):
         loss.backward()
         optimizer.step()
         running_loss += loss.data[0]
-        if i % 20 == 19:
-            print('[%d, %5d] train loss: %.10f' % (epoch + 1, i + 1, running_loss)),
+        if i % 5 == 0:
+            print('[%d, %5d] train loss: %.10f' % (epoch + 1, i, running_loss)),
             test_loss = 0.0
             net.eval() # set to evaluation mode (turns off dropout)
-            for i, data in enumerate(testLoader, 0):
+            for data in testLoader:
                 ECALs, HCALs, ys = data
                 ECALs, HCALs, ys = Variable(ECALs.cuda()), Variable(HCALs.cuda()), Variable(ys.cuda())
                 outputs = net(ECALs, HCALs)
@@ -116,11 +121,12 @@ for epoch in range(nEpochs):
                 test_loss += loss.data[0]
             print(', test loss: %.10f' % (test_loss))
             net.train() # set to training mode
-            loss_history.append([epoch + 1, i + 1, running_loss, test_loss])
+            loss_history.append([epoch + 1, i, running_loss, test_loss])
             running_loss = 0.0
 
-with h5.File(OutPath+"LossHistory.h5", 'w') as loss_file:
-    loss_file.create_dataset("loss", data=np.array(loss_history))
+if not os.path.exists(OutPath): os.makedirs(OutPath)
+file = h5.File(OutPath+"Results.h5", 'w')
+file.create_dataset("loss_history", data=np.array(loss_history))
 
 torch.save(net.state_dict(), OutPath+"SavedModel")
 
@@ -139,6 +145,7 @@ for data in testLoader:
     outputs = net(ECALs, HCALs)
     _, predicted = torch.max(outputs.data, 1)
     total += ys.size(0)
-    correct += (predicted == ys).sum()
+    correct += (predicted == ys.data).sum()
 
 print('Accuracy of the network on test samples: %f %%' % (100 * float(correct) / total))
+file.create_dataset("test_accuracy", data=np.array([100*float(correct)/total]))
