@@ -1,0 +1,1 @@
+This code uses Amir's adlkit to retrieve events from H5 files. It's much faster than the loader version.

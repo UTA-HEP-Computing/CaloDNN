@@ -1,0 +1,2 @@
+Last used on Oct. 14, 2017.
+This code uses a PyTorch Dataset object to retrieve events from H5 files. It's pretty slow.
