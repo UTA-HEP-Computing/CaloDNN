@@ -15,13 +15,15 @@ import h5py as h5
 # Set options #
 ###############
 
-basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V2/EleChPi/"
+basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V3/Downsampled/EleChPi/"
 samplePath = [basePath + "ChPiEscan/ChPiEscan_*.h5", basePath + "EleEscan/EleEscan_*.h5"]
 classPdgID = [211, 11] # absolute IDs corresponding to paths above
 eventsPerFile = 10000
 
 trainRatio = 0.9
-nEpochs = 5
+nEpochs = 5 # break after this number of epochs
+relativeDeltaLossThreshold = 0.02 # break if change in loss falls below this threshold over an entire epoch, or...
+relativeDeltaLossNumber = 5 # ...for this number of test losses in a row
 batchSize = 1000
 nworkers = 4
 
@@ -98,8 +100,12 @@ lossFunction = nn.CrossEntropyLoss()
 
 loss_history = []
 net.train() # set to training mode
+avg_training_loss = 0.0
+test_loss = 0.0
+epoch_test_loss = 0.0
+endTraining = False
+over_break_count = 0
 for epoch in range(nEpochs):
-    running_loss = 0.0
     for i, data in enumerate(trainLoader, 0):
         ECALs, HCALs, ys = data
         ECALs, HCALs, ys = Variable(ECALs.cuda()), Variable(HCALs.cuda()), Variable(ys.cuda())
@@ -108,9 +114,11 @@ for epoch in range(nEpochs):
         loss = lossFunction(outputs, ys)
         loss.backward()
         optimizer.step()
-        running_loss += loss.data[0]
-        if i % 5 == 0:
-            print('[%d, %5d] train loss: %.10f' % (epoch + 1, i, running_loss)),
+        avg_training_loss += loss.data[0]
+        if i % 5 == 4:
+            avg_training_loss /= 5 # average of loss over last 5 batches
+            print('[%d, %5d] train loss: %.10f' % (epoch + 1, i, avg_training_loss)),
+            previous_test_loss = test_loss
             test_loss = 0.0
             net.eval() # set to evaluation mode (turns off dropout)
             for data in testLoader:
@@ -121,8 +129,24 @@ for epoch in range(nEpochs):
                 test_loss += loss.data[0]
             print(', test loss: %.10f' % (test_loss))
             net.train() # set to training mode
-            loss_history.append([epoch + 1, i, running_loss, test_loss])
-            running_loss = 0.0
+            loss_history.append([epoch + 1, i, avg_training_loss, test_loss])
+            avg_training_loss = 0.0
+            # decide whether or not to end training
+            relativeDeltaLoss = (test_loss - previous_test_loss)/float(previous_test_loss)
+            print('relative error: %.10f' % relativeDeltaLoss),
+            if(relativeDeltaLoss>relativeDeltaLossThreshold):
+                over_break_count+=1
+            if(over_break_count>relativeDeltaLossNumber):
+                endTraining = True
+                break
+            else:
+                over_break_count=0
+    previous_epoch_test_loss = epoch_test_loss
+    epoch_test_loss = test_loss
+    relativeEpochDeltaLoss = (epoch_test_loss - previous_epoch_test_loss)/float(previous_epoch_test_loss)
+    if(relativeEpochDeltaLoss > relativeDeltaLossThreshold):
+        endTraining = True
+    if endTraining: break
 
 if not os.path.exists(OutPath): os.makedirs(OutPath)
 file = h5.File(OutPath+"Results.h5", 'w')
