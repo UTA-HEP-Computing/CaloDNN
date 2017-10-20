@@ -14,11 +14,11 @@ def load_hdf5(file):
     """Loads H5 file. Used by HDF5Dataset."""
 
     with h5py.File(file, 'r') as f:
-        ECAL = f['ECAL'][:]
-        HCAL = f['HCAL'][:]
-        pdgID = f['pdgID'][:,0]
+        ECAL = f['ECAL/ECAL'][:]
+        HCAL = f['HCAL/HCAL'][:]
+        pdgID = f['Event/pdgID'][0]
 
-    return ECAL, HCAL, pdgID
+    return ECAL.astype(np.float32), HCAL, pdgID
 
 def load_3d_hdf5(file):
 

@@ -72,15 +72,15 @@ testLoader = data.DataLoader(dataset=testSet,batch_size=batchSize,sampler=loader
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.input = nn.Linear(25 * 25 * 25 + 5 * 5 * 60, hiddenLayerNeurons)
+        self.input = nn.Linear(5 * 5 * 25 + 5 * 5 * 60, hiddenLayerNeurons)
         self.hidden = nn.Linear(hiddenLayerNeurons, hiddenLayerNeurons)
         self.dropout = nn.Dropout(p = dropoutProb)
         self.output = nn.Linear(hiddenLayerNeurons, 2)
     def forward(self, x1, x2):
-        x1 = x1.view(-1, 25 * 25 * 25)
+        x1 = x1.view(-1, 5 * 5 * 25)
         x2 = x2.view(-1, 5 * 5 * 60)
-        x = torch.cat((x1,x2), 1)
-        x = F.relu(self.input(x))
+        x = torch.cat([x1,x2], 1)
+        x = self.input(x)
         for i in range(nHiddenLayers-1):
             x = F.relu(self.hidden(x))
             x = self.dropout(x)
@@ -115,9 +115,9 @@ for epoch in range(nEpochs):
         loss.backward()
         optimizer.step()
         avg_training_loss += loss.data[0]
-        if i % 5 == 4:
-            avg_training_loss /= 5 # average of loss over last 5 batches
-            print('[%d, %5d] train loss: %.10f' % (epoch + 1, i, avg_training_loss)),
+        if i % 20 == 19:
+            avg_training_loss /= 20 # average of loss over last 5 batches
+            print('[%d, %5d] train loss: %.10f' % (epoch+1, i+1, avg_training_loss)),
             previous_test_loss = test_loss
             test_loss = 0.0
             net.eval() # set to evaluation mode (turns off dropout)
@@ -127,24 +127,24 @@ for epoch in range(nEpochs):
                 outputs = net(ECALs, HCALs)
                 loss = lossFunction(outputs, ys)
                 test_loss += loss.data[0]
-            print(', test loss: %.10f' % (test_loss))
+            print(', test loss: %.10f' % (test_loss)),
             net.train() # set to training mode
             loss_history.append([epoch + 1, i, avg_training_loss, test_loss])
             avg_training_loss = 0.0
             # decide whether or not to end training
-            relativeDeltaLoss = (test_loss - previous_test_loss)/float(previous_test_loss)
-            print('relative error: %.10f' % relativeDeltaLoss),
-            if(relativeDeltaLoss>relativeDeltaLossThreshold):
+            relativeDeltaLoss = 1 if previous_test_loss==0 else (previous_test_loss - test_loss)/float(previous_test_loss)
+            print(', relative error: %.10f' % relativeDeltaLoss)
+            if (relativeDeltaLoss < relativeDeltaLossThreshold):
                 over_break_count+=1
-            if(over_break_count>relativeDeltaLossNumber):
+            if (over_break_count>relativeDeltaLossNumber):
                 endTraining = True
                 break
             else:
                 over_break_count=0
     previous_epoch_test_loss = epoch_test_loss
     epoch_test_loss = test_loss
-    relativeEpochDeltaLoss = (epoch_test_loss - previous_epoch_test_loss)/float(previous_epoch_test_loss)
-    if(relativeEpochDeltaLoss > relativeDeltaLossThreshold):
+    relativeEpochDeltaLoss = 1 if previous_epoch_test_loss==0 else (previous_epoch_test_loss - epoch_test_loss)/float(previous_epoch_test_loss)
+    if (relativeEpochDeltaLoss < relativeDeltaLossThreshold):
         endTraining = True
     if endTraining: break
 

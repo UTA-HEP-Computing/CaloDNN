@@ -15,8 +15,8 @@ import cPickle
 # Set options #
 ###############
 
-basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V3/EleChPi/"
-samplePath = [basePath + "ChPi/ChPiEscan_*.h5", basePath + "Ele/EleEscan_*.h5"]
+basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V3/Downsampled/EleChPi/"
+samplePath = [basePath + "ChPiEscan/ChPiEscan_*.h5", basePath + "EleEscan/EleEscan_*.h5"]
 target_names = ['charged pion', 'electron']
 classPdgID = [211, 11] # absolute IDs corresponding to paths above
 
@@ -56,9 +56,9 @@ for path in h5_dataset_iterator(dataFiles[0]):
     features.append(path)
 
 # remove features bad for BDT
-badKeys = ['ECAL', 'HCAL', 'energy'] # leave pdgID for now - needed below
+badKeys = ['ECAL/ECAL', 'HCAL/HCAL', 'Event/conversion', 'Event/energy', 'Event/px', 'Event/py', 'Event/pz'] # leave pdgID for now - needed below
 for key in badKeys:
-    features.remove(key)
+    if key in features: features.remove(key)
 
 # convert pdgID to class
 dictID = {}
@@ -73,11 +73,11 @@ for count, feature in enumerate(features):
     newFeature = []
     for fileN in range(len(dataFiles)):
         newFeature += dataFiles[fileN][feature]
-    if feature == 'pdgID':
+    if feature == 'Event/pdgID':
         y = np.array([dictID[abs(x[0])] for x in newFeature])
     else:
         data.append(newFeature);
-features.remove('pdgID')
+features.remove('Event/pdgID')
 
 X = np.column_stack(data)
 y = y[np.isfinite(X).all(axis=1)]
