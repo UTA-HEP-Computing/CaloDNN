@@ -20,12 +20,10 @@ samplePath = [basePath + "ChPiEscan/ChPiEscan_*.h5", basePath + "EleEscan/EleEsc
 target_names = ['charged pion', 'electron']
 classPdgID = [211, 11] # absolute IDs corresponding to paths above
 
-parameters = "_".join(sys.argv[1:])
-OutPath = "Output/BDT/"+parameters+"/"
-OutPath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/SubmissionScripts/BDT/Output/"+parameters+"/"
-max_depth = int(sys.argv[1]) # 3
-n_estimators = int(sys.argv[2]) # 800
-learning_rate = float(sys.argv[3]) # 0.5
+OutPath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/SubmissionScripts/BDT/"+sys.argv[1]
+max_depth = int(sys.argv[2]) # 3
+n_estimators = int(sys.argv[3]) # 800
+learning_rate = float(sys.argv[4]) # 0.5
 
 ##########################
 # Load and prepare files #

@@ -27,14 +27,13 @@ relativeDeltaLossNumber = 5 # ...for this number of test losses in a row
 batchSize = 1000
 nworkers = 4
 
-parameters = "_".join(sys.argv[1:])
-OutPath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/SubmissionScripts/PyTorchNN/Output/"+parameters+"/"
+OutPath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/SubmissionScripts/PyTorchNN/"+sys.argv[1]
 
-learningRate = float(sys.argv[1]) # 0.01
-decayRate = float(sys.argv[2]) # 0
-dropoutProb = float(sys.argv[3]) # 0.3
-hiddenLayerNeurons = int(sys.argv[4]) # 32
-nHiddenLayers = int(sys.argv[5]) # 5
+learningRate = float(sys.argv[2])
+decayRate = float(sys.argv[3])
+dropoutProb = float(sys.argv[4])
+hiddenLayerNeurons = int(sys.argv[5])
+nHiddenLayers = int(sys.argv[6])
 
 ##############
 # Load files #
