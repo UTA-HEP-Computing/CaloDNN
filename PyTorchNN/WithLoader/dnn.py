@@ -15,14 +15,17 @@ import h5py as h5
 # Set options #
 ###############
 
-basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V3/Downsampled/EleChPi/"
-samplePath = [basePath + "ChPiEscan/ChPiEscan_*.h5", basePath + "EleEscan/EleEscan_*.h5"]
-classPdgID = [211, 11] # absolute IDs corresponding to paths above
+# basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V3/Downsampled/EleChPi/"
+# samplePath = [basePath + "ChPiEscan/ChPiEscan_*.h5", basePath + "EleEscan/EleEscan_*.h5"]
+# classPdgID = [211, 11] # absolute IDs corresponding to paths above
+basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V3/Downsampled/GammaPi0/"
+samplePath = [basePath + "GammaEscan/GammaEscan_*.h5", basePath + "Pi0Escan/Pi0Escan_*.h5"]
+classPdgID = [22, 111] # absolute IDs corresponding to paths above
 eventsPerFile = 10000
 
 trainRatio = 0.9
 nEpochs = 5 # break after this number of epochs
-relativeDeltaLossThreshold = 0.02 # break if change in loss falls below this threshold over an entire epoch, or...
+relativeDeltaLossThreshold = 0.001 # break if change in loss falls below this threshold over an entire epoch, or...
 relativeDeltaLossNumber = 5 # ...for this number of test losses in a row
 batchSize = 1000
 nworkers = 4
@@ -135,11 +138,11 @@ for epoch in range(nEpochs):
             print(', relative error: %.10f' % relativeDeltaLoss)
             if (relativeDeltaLoss < relativeDeltaLossThreshold):
                 over_break_count+=1
-            if (over_break_count>relativeDeltaLossNumber):
-                endTraining = True
-                break
             else:
                 over_break_count=0
+            if (over_break_count >= relativeDeltaLossNumber):
+                endTraining = True
+                break
     previous_epoch_test_loss = epoch_test_loss
     epoch_test_loss = test_loss
     relativeEpochDeltaLoss = 1 if previous_epoch_test_loss==0 else (previous_epoch_test_loss - epoch_test_loss)/float(previous_epoch_test_loss)

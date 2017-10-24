@@ -18,7 +18,7 @@ def load_hdf5(file):
         HCAL = f['HCAL/HCAL'][:]
         pdgID = f['Event/pdgID'][0]
 
-    return ECAL.astype(np.float32), HCAL, pdgID
+    return ECAL.astype(np.float32), HCAL.astype(np.float32), pdgID
 
 def load_3d_hdf5(file):
 
