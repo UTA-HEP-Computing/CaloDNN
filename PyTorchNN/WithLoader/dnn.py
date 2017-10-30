@@ -19,16 +19,16 @@ import h5py as h5
 # samplePath = [basePath + "ChPiEscan/ChPiEscan_*.h5", basePath + "EleEscan/EleEscan_*.h5"]
 # classPdgID = [211, 11] # absolute IDs corresponding to paths above
 basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V3/Downsampled/GammaPi0/"
-samplePath = [basePath + "GammaEscan/GammaEscan_*.h5", basePath + "Pi0Escan/Pi0Escan_*.h5"]
-classPdgID = [22, 111] # absolute IDs corresponding to paths above
+samplePath = [basePath + "Pi0Escan/Pi0Escan_*.h5", basePath + "GammaEscan/GammaEscan_*.h5"]
+classPdgID = [111, 22] # absolute IDs corresponding to paths above
 eventsPerFile = 10000
 
-trainRatio = 0.9
+trainRatio = 0.66
 nEpochs = 5 # break after this number of epochs
 relativeDeltaLossThreshold = 0.001 # break if change in loss falls below this threshold over an entire epoch, or...
 relativeDeltaLossNumber = 5 # ...for this number of test losses in a row
 batchSize = 1000
-nworkers = 4
+nworkers = 0
 
 OutPath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/SubmissionScripts/PyTorchNN/"+sys.argv[1]
 
@@ -172,6 +172,8 @@ for data in testLoader:
     _, predicted = torch.max(outputs.data, 1)
     total += ys.size(0)
     correct += (predicted == ys.data).sum()
+
+file.create_dataset("outputs", data=np.array(outputs.data))
 
 print('Accuracy of the network on test samples: %f %%' % (100 * float(correct) / total))
 file.create_dataset("test_accuracy", data=np.array([100*float(correct)/total]))

@@ -15,14 +15,14 @@ import cPickle
 # Set options #
 ###############
 
-basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V3/Downsampled/EleChPi/"
-samplePath = [basePath + "ChPiEscan/ChPiEscan_*.h5", basePath + "EleEscan/EleEscan_*.h5"]
-target_names = ['charged pion', 'electron']
-classPdgID = [211, 11] # absolute IDs corresponding to paths above
-# basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V3/Downsampled/GammaPi0/"
-# samplePath = [basePath + "GammaEscan/GammaEscan_*.h5", basePath + "Pi0Escan/Pi0Escan_*.h5"]
-# target_names = ['photon', 'neutral pion']
-# classPdgID = [22, 111] # absolute IDs corresponding to paths above
+# basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V4/Original/EleChPi/"
+# samplePath = [basePath + "ChPiEscan/ChPiEscan_*.h5", basePath + "EleEscan/EleEscan_*.h5"]
+# target_names = ['charged pion', 'electron']
+# classPdgID = [211, 11] # absolute IDs corresponding to paths above
+basePath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/Data/V4/Original/GammaPi0/"
+samplePath = [basePath + "Pi0Escan/Pi0Escan_*.h5", basePath + "GammaEscan/GammaEscan_*.h5"]
+target_names = ['neutral pion', 'photon']
+classPdgID = [111, 22] # absolute IDs corresponding to paths above
 
 OutPath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/SubmissionScripts/BDT/"+sys.argv[1]
 max_depth = int(sys.argv[2]) # 3
@@ -60,35 +60,26 @@ for path in h5_dataset_iterator(dataFiles[0]):
     features.append(path)
 
 # remove features bad for BDT
-badKeys = ['ECAL/ECAL', 'HCAL/HCAL', 'Event/conversion', 'Event/energy', 'Event/px', 'Event/py', 'Event/pz', 'N_Subjettiness/bestJets1', 'N_Subjettiness/bestJets2'] # leave pdgID for now - needed below
+badKeys = []
+# badKeys = ['ECAL/ECAL', 'HCAL/HCAL', 'Event/conversion', 'Event/energy', 'Event/px', 'Event/py', 'Event/pz', 'N_Subjettiness/bestJets1', 'N_Subjettiness/bestJets2'] # leave pdgID for now - needed below
 for key in badKeys:
     if key in features: features.remove(key)
-
-# # convert pdgID to class
-# dictID = {}
-# for i, ID in enumerate(classPdgID):
-    # dictID[ID] = i
 
 # concat all data to form X and y
 data = []
 print "Reading features"
 for count, feature in enumerate(features):
     sys.stdout.flush()
-    newFeature = None
-    if feature == 'Event/pdgID':
-        newFeature = dataFiles[0][feature][0] # due to a bug in how event info was saved
-        for fileN in range(1, len(dataFiles)):
-            newFeature = np.concatenate((newFeature, dataFiles[fileN][feature][0]))
+    newFeature = dataFiles[0][feature]
+    for fileN in range(1, len(dataFiles)):
+        newFeature = np.concatenate((newFeature, dataFiles[fileN][feature]))
+    if feature == 'pdgID':
         y = newFeature
         for i, ID in enumerate(classPdgID):
             y[y==ID] = i
-        # y = np.array([dictID[x] for x in newFeature])
     else:
-        newFeature = dataFiles[0][feature]
-        for fileN in range(1, len(dataFiles)):
-            newFeature = np.concatenate((newFeature, dataFiles[fileN][feature]))
         data.append(newFeature);
-features.remove('Event/pdgID')
+features.remove('pdgID')
 features = np.array(features)
 
 X = np.column_stack(data)
@@ -98,7 +89,7 @@ X = X[np.isfinite(X).all(axis=1)]
 # split test and train
 # X_dev, X_eval, y_dev, y_eval = train_test_split(X, y, test_size=0.33, random_state=42)
 # X_train, X_test, y_train, y_test = train_test_split(X_dev, y_dev, test_size=0.33, random_state=492)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=492)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=492)
 
 #############
 # Train BDT #
@@ -195,9 +186,9 @@ importances = bdt.feature_importances_
 std = np.std([tree.feature_importances_ for tree in bdt.estimators_], axis=0)
 indices = np.argsort(importances)[::-1]
 
+file.create_dataset("features", data=features)
 file.create_dataset("importances", data=np.array(importances))
 file.create_dataset("std", data=np.array(std))
-file.create_dataset("features", data=features[np.array(indices)])
 
 print("Feature ranking:")
 for f in range(X.shape[1]):

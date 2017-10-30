@@ -14,11 +14,11 @@ def load_hdf5(file):
     """Loads H5 file. Used by HDF5Dataset."""
 
     with h5py.File(file, 'r') as f:
-        ECAL = f['ECAL/ECAL'][:]
-        HCAL = f['HCAL/HCAL'][:]
-        pdgID = f['Event/pdgID'][0]
+        ECAL = f['ECAL'][:]
+        HCAL = f['HCAL'][:]
+        pdgID = f['pdgID'][:]
 
-    return ECAL.astype(np.float32), HCAL.astype(np.float32), pdgID
+    return ECAL.astype(np.float32), HCAL.astype(np.float32), pdgID.astype(int)
 
 def load_3d_hdf5(file):
 
@@ -94,32 +94,3 @@ class OrderedRandomSampler(object):
 
     def __len__(self):
         return len(self.data_source)
-
-# def loadFiles():
-
-    # particle_name_0 = "Ele"
-    # particle_name_1 = "ChPi"
-    # mixed_particle_name = "EleChPi"
-    # samplePath = "~/Projects/DNNCalorimeter/Data/V2/MixedEleChPi/"
-
-    # nworkers = 0
-    # batch_size = 1000
-
-    # ###############
-    # # Mixed files #
-    # ###############
-
-    # train_files = samplePath+"Train/"+mixed_particle_name+"_*.h5"
-    # test_files = samplePath+"Test/"+mixed_particle_name+"_*.h5"
-    # # val_files = samplePath+"Test/"+mixed_particle_name+"_0.h5"
-    # eventsPerFile = 20000
-
-    # train_files = glob.glob(train_files)
-    # test_files = glob.glob(test_files)
-    # # val_files = glob.glob(val_files)
-    # train_set = HDF5Dataset(train_files,eventsPerFile)
-    # test_set = HDF5Dataset(test_files,eventsPerFile)
-    # # val_set = HDF5Dataset(val_files,eventsPerFile)
-    # train_loader = data.DataLoader(dataset=train_set,batch_size=batch_size,sampler=OrderedRandomSampler(train_set),num_workers=nworkers)
-    # test_loader = data.DataLoader(dataset=test_set,batch_size=batch_size,sampler=OrderedRandomSampler(test_set),num_workers=nworkers)
-    # # val_loader = data.DataLoader(dataset=val_set,batch_size=batch_size,sampler=OrderedRandomSampler(val_set),num_workers=nworkers)
