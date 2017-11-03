@@ -60,8 +60,7 @@ for path in h5_dataset_iterator(dataFiles[0]):
     features.append(path)
 
 # remove features bad for BDT
-badKeys = []
-# badKeys = ['ECAL/ECAL', 'HCAL/HCAL', 'Event/conversion', 'Event/energy', 'Event/px', 'Event/py', 'Event/pz', 'N_Subjettiness/bestJets1', 'N_Subjettiness/bestJets2'] # leave pdgID for now - needed below
+badKeys = ['ECALmomentX1', 'ECALmomentY1', 'HCALmomentX1', 'HCALmomentY1', 'ECAL/ECAL', 'HCAL/HCAL', 'Event/conversion', 'Event/energy', 'Event/px', 'Event/py', 'Event/pz', 'N_Subjettiness/bestJets1', 'N_Subjettiness/bestJets2'] # leave pdgID for now - needed below
 for key in badKeys:
     if key in features: features.remove(key)
 
@@ -81,6 +80,7 @@ for count, feature in enumerate(features):
         data.append(newFeature);
 features.remove('pdgID')
 features = np.array(features)
+features = features.astype(str)
 
 X = np.column_stack(data)
 y = y[np.isfinite(X).all(axis=1)]
@@ -95,11 +95,11 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random
 # Train BDT #
 #############
 
-dt = DecisionTreeClassifier(max_depth=max_depth)
-bdt = AdaBoostClassifier(dt,
-                         algorithm='SAMME',
-                         n_estimators=n_estimators,
-                         learning_rate=learning_rate)
+bdt = GradientBoostingClassifier(max_depth=max_depth,
+        n_estimators=n_estimators,
+        learning_rate=learning_rate,
+        verbose=True,
+        random_state=492)
 
 print "Training BDT"
 bdt.fit(X_train, y_train)
@@ -125,16 +125,17 @@ file = h5.File(OutPath+"Results.h5", 'w')
 fpr, tpr, thresholds = roc_curve(y_test, decisions)
 roc_auc = auc(fpr, tpr)
 
-# plt.plot(fpr, tpr, lw=1, label='ROC (area = %0.2f)'%(roc_auc))
-# plt.plot([0, 1], [0, 1], '--', color=(0.6, 0.6, 0.6), label='Luck')
-# plt.xlim([-0.05, 1.05])
-# plt.ylim([-0.05, 1.05])
-# plt.xlabel('False Positive Rate')
-# plt.ylabel('True Positive Rate')
-# plt.title('Receiver operating characteristic')
-# plt.legend(loc="lower right")
-# plt.grid()
-# plt.savefig(OutPath+'foo.png', bbox_inches='tight')
+plt.plot(fpr, tpr, lw=1, label='ROC (area = %0.2f)'%(roc_auc))
+plt.plot([0, 1], [0, 1], '--', color=(0.6, 0.6, 0.6), label='Luck')
+plt.xlim([-0.05, 1.05])
+plt.ylim([-0.05, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic')
+plt.legend(loc="lower right")
+plt.grid()
+plt.savefig(OutPath+'ROC.png', bbox_inches='tight')
+plt.cla(); plt.clf()
 
 file.create_dataset("roc_auc", data=np.array([roc_auc]))
 file.create_dataset("fpr", data=np.array(fpr))
@@ -176,14 +177,14 @@ def compare_train_test(clf, X_train, y_train, X_test, y_test, bins=30):
 
     plt.savefig(OutPath+'compare_train_test.png', bbox_inches='tight')
     
-# compare_train_test(bdt, X_train, y_train, X_test, y_test)
+compare_train_test(bdt, X_train, y_train, X_test, y_test)
 
 with open(OutPath+'bdt.pkl', 'wb') as pickleFile:
     cPickle.dump(bdt, pickleFile)    
 
 # feature rankings
 importances = bdt.feature_importances_
-std = np.std([tree.feature_importances_ for tree in bdt.estimators_], axis=0)
+std = np.std([tree[0].feature_importances_ for tree in bdt.estimators_], axis=0)
 indices = np.argsort(importances)[::-1]
 
 file.create_dataset("features", data=features)
@@ -194,10 +195,10 @@ print("Feature ranking:")
 for f in range(X.shape[1]):
     print("%d. %s (%f)" % (f+1, features[indices[f]], importances[indices[f]]))
 
-# plt.figure()
-# plt.title("Feature importances")
-# plt.bar(range(X.shape[1]), importances[indices],
-       # color="r", yerr=std[indices], align="center")
-# plt.xticks(range(X.shape[1]))
-# plt.xlim([-1, X.shape[1]])
-# plt.savefig(OutPath+'feature_importances.png', bbox_inches='tight')
+plt.figure()
+plt.title("Feature importances")
+plt.bar(range(X.shape[1]), importances[indices],
+       color="r", yerr=std[indices], align="center")
+plt.xticks(range(X.shape[1]))
+plt.xlim([-1, X.shape[1]])
+plt.savefig(OutPath+'feature_importances.png', bbox_inches='tight')
