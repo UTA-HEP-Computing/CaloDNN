@@ -106,7 +106,7 @@ bdt.fit(X_train, y_train)
 print "Analyzing BDT results"
 y_predicted = bdt.predict(X_test)
 decisions = bdt.decision_function(X_test)
-print (classification_report(y_test, y_predicted, target_names=target_names))
+print (classification_report(y_test, y_predicted, target_names=target_names, digits=4))
 print ("Area under ROC curve: %.4f"%(roc_auc_score(y_test, decisions)))
 
 ################
@@ -125,7 +125,7 @@ file = h5.File(OutPath+"Results.h5", 'w')
 fpr, tpr, thresholds = roc_curve(y_test, decisions)
 roc_auc = auc(fpr, tpr)
 
-plt.plot(fpr, tpr, lw=1, label='ROC (area = %0.2f)'%(roc_auc))
+plt.plot(fpr, tpr, lw=1, label='ROC (area = %0.4f)'%(roc_auc))
 plt.plot([0, 1], [0, 1], '--', color=(0.6, 0.6, 0.6), label='Luck')
 plt.xlim([-0.05, 1.05])
 plt.ylim([-0.05, 1.05])
