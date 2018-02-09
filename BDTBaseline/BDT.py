@@ -26,6 +26,8 @@ samplePath = [basePath + "Pi0Escan/Pi0Escan_*.h5", basePath + "GammaEscan/GammaE
 target_names = ['neutral pion', 'photon']
 classPdgID = [111, 22] # absolute IDs corresponding to paths above
 
+badKeys = ['ECALmomentX1', 'ECALmomentY1', 'HCALmomentX1', 'HCALmomentY1', 'ECAL/ECAL', 'HCAL/HCAL', 'Event/conversion', 'Event/energy', 'Event/px', 'Event/py', 'Event/pz', 'N_Subjettiness/bestJets1', 'N_Subjettiness/bestJets2'] # leave pdgID for now - needed below
+
 OutPath = "/u/sciteam/zhang10/Projects/DNNCalorimeter/SubmissionScripts/BDT/"+sys.argv[1]
 max_depth = int(sys.argv[2]) # 3
 n_estimators = int(sys.argv[3]) # 800
@@ -62,7 +64,6 @@ for path in h5_dataset_iterator(dataFiles[0]):
     features.append(path)
 
 # remove features bad for BDT
-badKeys = ['ECALmomentX1', 'ECALmomentY1', 'HCALmomentX1', 'HCALmomentY1', 'ECAL/ECAL', 'HCAL/HCAL', 'Event/conversion', 'Event/energy', 'Event/px', 'Event/py', 'Event/pz', 'N_Subjettiness/bestJets1', 'N_Subjettiness/bestJets2'] # leave pdgID for now - needed below
 for key in badKeys:
     if key in features: features.remove(key)
 
